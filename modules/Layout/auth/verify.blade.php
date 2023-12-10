@@ -1,10 +1,10 @@
-@extends('layouts.app')
+@extends('layouts.common_home')
 
 @section('content')
 <div class="container">
     <div class="row justify-content-center bravo-login-form-page bravo-login-page">
         <div class="col-md-8">
-            <div class="card">
+            <div class="card theme-card mt-50">
                 <div class="card-header">{{ __('Verify Your Email Address') }}</div>
                 <div class="card-body">
                     @if (session('resent'))

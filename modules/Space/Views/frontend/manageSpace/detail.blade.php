@@ -1,108 +1,116 @@
-@extends('layouts.user')
+@extends('layouts.yellow_user')
 @section('head')
-
 @endsection
 @section('content')
-    <h2 class="title-bar no-border-bottom">
-        {{$row->id ? __('Edit: ').$row->title : __('Add new space')}}
-    </h2>
-    @include('admin.message')
-    @if($row->id)
-        @include('Language::admin.navigation')
-    @endif
-    <div class="lang-content-box">
-        <form
-            action="{{route('space.vendor.store',['id'=>($row->id) ? $row->id : '-1','lang'=>request()->query('lang')])}}"
-            method="post">
-            @csrf
-            <div class="form-add-service">
-                <div class="nav nav-tabs nav-fill" id="nav-tab" role="tablist">
-                    <a data-toggle="tab" href="#nav-tour-content" aria-selected="true"
-                       class="active">{{__("1. Content")}}</a>
-                    <a data-toggle="tab" href="#nav-tour-location" aria-selected="false">{{__("2. Locations")}}</a>
-                    <a data-toggle="tab" href="#nav-tour-pricing" aria-selected="false">{{__("3. Pricing")}}</a>
-                    <a data-toggle="tab" href="#nav-tour-availability" aria-selected="false">{{__("4. Calendar Availability")}}</a>
-                    @if(is_default_lang())
-                        <a data-toggle="tab" href="#nav-attribute" aria-selected="false">{{__("5. Attributes")}}</a>
-                        <a data-toggle="tab" href="#nav-ical" aria-selected="false">{{__("6. Ical")}}</a>
-                    @endif
-                </div>
-                <div class="tab-content" id="nav-tabContent">
-                    <div class="tab-pane fade show active" id="nav-tour-content">
-                        @include('Space::admin/space/content')
-                        @if(is_default_lang())
-                            <div class="form-group">
-                                <label>{{__("Featured Image")}}</label>
-                                {!! \Modules\Media\Helpers\FileHelper::fieldUpload('image_id',$row->image_id) !!}
-                            </div>
-                        @endif
-                    </div>
-                    <div class="tab-pane fade" id="nav-tour-location">
-                        @include('Space::admin/space/location',["is_smart_search"=>"1"])
-                        @include('Hotel::admin.hotel.surrounding')
+    <?php
+    if (!$row->id) {
+        //new record
+        $row->enable_extra_price = 1;
+        $row->extra_price = [
+            [
+                'name' => 'Cleaning Fee',
+                'price' => 0,
+                'type' => 'one_time',
+            ],
+        ];
+    }
+    ?>
 
-                    </div>
-
-                    <div class="tab-pane fade" id="nav-tour-availability">
-                        @include('Space::admin/space/availability')
-                    </div>
-
-                    <div class="tab-pane fade" id="nav-tour-pricing">
-                        <div style="display: none;" class="panel">
-                            <div class="panel-title"><strong>{{__('Default State')}}</strong></div>
-                            <div class="panel-body">
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="form-group">
-                                            <input type="hidden" name="default_state" value="1">
-                                            <?php /* ?>
-                                            <select name="default_state" class="custom-select">
-                                                <option value="">{{__('-- Please select --')}}</option>
-                                                <option value="1" @if(old('default_state',$row->default_state ?? 0) == 1) selected @endif>{{__("Always available")}}</option>
-                                                <option value="0" @if(old('default_state',$row->default_state ?? 0) == 0) selected @endif>{{__("Only available on specific dates")}}</option>
-                                            </select>
-                                            <?php */ ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        @include('Space::admin/space/pricing')
-                    </div>
-                    @if(is_default_lang())
-                        <div class="tab-pane fade" id="nav-attribute">
-                            @include('Space::admin/space/attributes')
-                        </div>
-                        <div class="tab-pane fade" id="nav-ical">
-                            @include('Space::admin/space/ical')
-                        </div>
-                    @endif
-                </div>
+    <div class="content sm-gutter">
+        <!-- START BREADCRUMBS-->
+        <div class="bg-white">
+            <div class="container-fluid pl-5">
+                <ol class="breadcrumb breadcrumb-alt bg-white mb-0">
+                    <li class="breadcrumb-item"><a href="{{ route('user.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('space.vendor.index') }}">Spaces</a></li>
+                    <li class="breadcrumb-item active">{{ $row->id ? __('Edit: ') . $row->title : __('Add new space') }}</li>
+                </ol>
             </div>
-            <div class="d-flex justify-content-between">
-                <button class="btn btn-primary" type="submit"><i class="fa fa-save"></i> {{__('Save Changes')}}</button>
+        </div>
+
+        <div class="container-fluid px-5 pt-4 pb-5">
+
+            @if ($row->id)
+                @include('Language::admin.navigation')
+            @endif
+
+            <div class="lang-content-box">
+                @include('admin.message')
+                <form
+                    action="{{ route('space.vendor.store', ['id' => $row->id ? $row->id : '-1', 'lang' => request()->query('lang')]) }}"
+                    method="post">
+                    @csrf
+                    <div class="form-add-service">
+
+                        <div class="nav nav-tabs nav-fill" id="nav-tab" role="tablist">
+                            <a data-toggle="tab" href="#nav-content" aria-selected="true"
+                                class="active">{{ __('1. Content') }}</a>
+                            <a data-toggle="tab" href="#nav-media" aria-selected="false">{{ __('2. Media') }}</a>
+                            <a data-toggle="tab" href="#nav-pricing" aria-selected="false">{{ __('3. Pricing') }}</a>
+                            <a data-toggle="tab" href="#nav-amenities" aria-selected="false">{{ __('4. Amenities') }}</a>
+                            <a data-toggle="tab" href="#nav-calendar" aria-selected="false">{{ __('5. Calendar') }}</a>
+                            <a data-toggle="tab" href="#nav-legal" aria-selected="false">{{ __('6. Legals') }}</a>
+                            <a data-toggle="tab" href="#nav-checkin" aria-selected="false">{{ __('7. Check IN/OUT') }}</a>
+
+                        </div>
+
+                        <div class="tab-content" id="nav-tabContent">
+
+                            <div class="tab-pane fade show active" id="nav-content">
+                                @include('Space::admin/space/user/content')
+                            </div>
+                            <div class="tab-pane fade" id="nav-media">
+                                @include('Space::admin/space/user/media')
+                            </div>
+                            <div class="tab-pane fade" id="nav-pricing">
+                                @include('Space::admin/space/user/pricing')
+                            </div>
+                            <div class="tab-pane fade" id="nav-amenities">
+                                @include('Space::admin/space/user/amenities')
+                            </div>
+                            <div class="tab-pane fade" id="nav-calendar">
+                                @include('Space::admin/space/user/calendar')
+                            </div>
+                            <div class="tab-pane fade" id="nav-legal">
+                                @include('Space::admin/space/user/legal')
+                            </div>
+                            <div class="tab-pane fade" id="nav-checkin">
+                                @include('Space::admin/space/user/checkin_out')
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-5">
+                        <button class="btn btn-primary" type="submit"><i class="fa fa-save"></i>
+                            {{ __('Save Changes') }}</button>
+                    </div>
+                </form>
             </div>
-        </form>
+
+        </div>
     </div>
 @endsection
+
 @section('footer')
     <script type="text/javascript" src="{{ asset('libs/tinymce/js/tinymce/tinymce.min.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('js/condition.js?_ver='.config('app.version')) }}"></script>
-    <script type="text/javascript" src="{{url('module/core/js/map-engine.js?_ver='.config('app.version'))}}"></script>
+    <script type="text/javascript" src="{{ asset('js/condition.js?_ver=' . config('app.version')) }}"></script>
+    <script type="text/javascript" src="{{ url('module/core/js/map-engine.js?_ver=' . config('app.version')) }}"></script>
     {!! App\Helpers\MapEngine::scripts() !!}
     <script>
-        jQuery(function ($) {
+        jQuery(function($) {
             new BravoMapEngine('map_content', {
                 fitBounds: true,
-                center: [{{$row->map_lat ?? setting_item('map_lat_default') }}, {{$row->map_lng ?? setting_item('map_lng_default') }}],
-                zoom:{{$row->map_zoom ?? "8"}},
-                ready: function (engineMap) {
-                    @if($row->map_lat && $row->map_lng)
-                    engineMap.addMarker([{{$row->map_lat}}, {{$row->map_lng}}], {
-                        icon_options: {}
-                    });
+                center: [{{ $row->map_lat ?? setting_item('map_lat_default') }},
+                    {{ $row->map_lng ?? setting_item('map_lng_default') }}
+                ],
+                zoom: {{ $row->map_zoom ?? '8' }},
+                ready: function(engineMap) {
+                    @if ($row->map_lat && $row->map_lng)
+                        engineMap.addMarker([{{ $row->map_lat }}, {{ $row->map_lng }}], {
+                            icon_options: {}
+                        });
                     @endif
-                    engineMap.on('click', function (dataLatLng) {
+                    engineMap.on('click', function(dataLatLng) {
                         engineMap.clearMarkers();
                         engineMap.addMarker(dataLatLng, {
                             icon_options: {}
@@ -110,11 +118,11 @@
                         $("input[name=map_lat]").attr("value", dataLatLng[0]);
                         $("input[name=map_lng]").attr("value", dataLatLng[1]);
                     });
-                    engineMap.on('zoom_changed', function (zoom) {
+                    engineMap.on('zoom_changed', function(zoom) {
                         $("input[name=map_zoom]").attr("value", zoom);
                     });
                     if (bookingCore.map_provider === "gmap") {
-                        engineMap.searchBox($('#customPlaceAddress'), function (dataLatLng) {
+                        engineMap.searchBox($('#customPlaceAddress'), function(dataLatLng) {
                             engineMap.clearMarkers();
                             engineMap.addMarker(dataLatLng, {
                                 icon_options: {}
@@ -123,7 +131,7 @@
                             $("input[name=map_lng]").attr("value", dataLatLng[1]);
                         });
                     }
-                    engineMap.searchBox($('.bravo_searchbox'), function (dataLatLng) {
+                    engineMap.searchBox($('.bravo_searchbox'), function(dataLatLng) {
                         engineMap.clearMarkers();
                         engineMap.addMarker(dataLatLng, {
                             icon_options: {}
@@ -134,5 +142,39 @@
                 }
             });
         })
+    </script>
+
+    <script>
+        let spaceSettings = {!! json_encode($spaceSettings) !!};
+
+        $(document).on("click", "#loadDefaultFaqs", function() {
+            let faqs = JSON.parse(spaceSettings.space_default_faqs);
+            for (let faqItem of faqs) {
+                $("#addMoreFaq").click();
+                let lastFaqItem = $("#spaceFaqLists .g-items").find(".item").last();
+                lastFaqItem.find(".title").val(faqItem.title);
+                lastFaqItem.find(".content").val(faqItem.content);
+            }
+        });
+
+        $(document).on("click", ".faq-accord-items .item, .faq-accord-items .item *", function(event) {
+            var targetElement = event.target;
+            if ($(targetElement).is('input, textarea')) {
+                // Logic for input or textarea click
+                $(".faq-accord-items .item").removeClass("show");
+                $(this).closest(".item").addClass("show");
+            } else {
+                $(".faq-accord-items .item").removeClass("show");
+            }
+        });
+
+
+        $(document).on("click", "#loadDefaultHouseRules", function() {
+            tinymce.get('spaceHouseRules').setContent(spaceSettings.space_default_house_rules);
+        });
+
+        $(document).on("click", "#loadDefaultTerms", function() {
+            tinymce.get('spaceTerms').setContent(spaceSettings.space_default_terms);
+        });
     </script>
 @endsection

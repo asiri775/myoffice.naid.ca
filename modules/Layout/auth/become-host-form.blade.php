@@ -67,7 +67,44 @@
             <span class="spinner-grow spinner-grow-sm icon-loading" role="status" aria-hidden="true"></span>
         </button>
     </div>
+
+    <div class="advanced">
+        <p class="text-center f14 c-grey">Already a MyOffice member? <a href="javascript:;"
+                class="signinclickmain gray-text">Log
+                In</a></p>
+    </div>
+
     @if (setting_item('facebook_enable') or setting_item('google_enable') or setting_item('twitter_enable'))
+        <div class="socialAuthStages">
+            <div class="loginrow orPlx fulwidthm left josfinsanregular fontsize16 graytext mgnB15 text-center">
+                <span>or</span>
+            </div>
+            <div class="fontsize12 graytext text-center mb-3">Continue With</div>
+            <div id="wrapper" style="text-align: center;">
+                <div style="display: inline-block; vertical-align: top;">
+                    <a href="{{ route('social.login', 'facebook') }}">
+                        <div class="text left pr-3">
+                            <img src="/images/facebook.png">
+                            <p class="robotoregular fontsize11 graytext text-uppercase mt-2">Facebook
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div style="display: inline-block; vertical-align: top;">
+                    <a href="{{ route('social.login', 'google') }}">
+                        <div class="text-center left">
+                            <img src="/images/google.png">
+                            <p class="robotoregular fontsize11 graytext text-uppercase mt-2">Google+</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    @endif
+
+
+
+    {{-- @if (setting_item('facebook_enable') or setting_item('google_enable') or setting_item('twitter_enable'))
         <div class="advanced">
             <p class="text-center f14 c-grey">{{ __('or continue with') }}</p>
             <div class="row">
@@ -99,11 +136,7 @@
                 @endif
             </div>
         </div>
-    @endif
-    <div class="advanced">
-        <div class="c-grey f14 text-center">
-            {{ __(' Already have an account?') }}
-            <a href="javascript:;" class="signinclickmain">{{ __('Log In') }}</a>
-        </div>
-    </div>
+    @endif --}}
+
+
 </form>

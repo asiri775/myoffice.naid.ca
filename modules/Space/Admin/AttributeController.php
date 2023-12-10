@@ -79,6 +79,16 @@ class AttributeController extends AdminController
         return view('Space::admin.attribute.detail', $data);
     }
 
+    public function delete(Request $request, $id)
+    {
+        $row = $this->attributesClass::find($id);
+        if (empty($row)) {
+            return redirect()->back()->with('error', __('Attributes not found!'));
+        }
+        $row->delete();
+        return redirect()->back()->with('success', __('Attribute has been deleted'));
+    }
+
     public function store(Request $request)
     {
         $this->checkPermission('space_manage_attributes');

@@ -40,7 +40,7 @@
             markers:{!! json_encode($markers) !!},
             map_lat_default:{{setting_item('car_map_lat_default','0')}},
             map_lng_default:{{setting_item('car_map_lng_default','0')}},
-            map_zoom_default:{{setting_item('car_map_zoom_default','6')}},
+            map_zoom_default:{{setting_item('car_map_zoom_default','15')}},
         };
     </script>
     <script type="text/javascript" src="{{ asset("libs/ion_rangeslider/js/ion.rangeSlider.min.js") }}"></script>

@@ -3,6 +3,7 @@
 namespace Modules\User\Controllers;
 
 use App\Helpers\CodeHelper;
+use App\Helpers\Constants;
 use App\Models\AddToFavourite;
 use App\Notifications\AdminChannelServices;
 use Carbon\Carbon;
@@ -51,6 +52,14 @@ class UserController extends FrontendController
     {
         $this->checkPermission('dashboard_vendor_access');
         $user_id = Auth::id();
+
+        $stats = [];
+
+        $vendorSpaceIds = CodeHelper::getVendorSpaceIds($user_id);
+
+        $stats['ratings'] = CodeHelper::getRatingsBySpaces($vendorSpaceIds);
+        $stats['analytics'] = CodeHelper::getAnalyticsBySpaces($vendorSpaceIds);
+
         $data = [
             'cards_report' => Booking::getTopCardsReportForVendor($user_id),
             'earning_chart_data' => Booking::getEarningChartDataForVendor(strtotime('monday this week'), time(), $user_id),
@@ -60,9 +69,18 @@ class UserController extends FrontendController
                     'name' => __('Dashboard'),
                     'class' => 'active'
                 ]
-            ]
+            ],
+            'stats' => $stats
         ];
         return view('User::frontend.dashboard', $data);
+    }
+
+    public function earningStats(Request $request)
+    {
+        $this->checkPermission('dashboard_vendor_access');
+        $user_id = Auth::id();
+        $earningStats = Booking::getEarningStats($user_id, $request->get('durationType'));
+        return response()->json($earningStats);
     }
 
     public function reloadChart(Request $request)
@@ -83,6 +101,9 @@ class UserController extends FrontendController
     public function profile(Request $request)
     {
         $user = Auth::user();
+        if (substr($user->phone, 0, 1) != "+") {
+            $user->phone = "+" . $user->phone;
+        }
         $data = [
             'dataUser' => $user,
             'page_title' => __("Profile"),
@@ -177,10 +198,20 @@ class UserController extends FrontendController
     {
         if (isset($_GET['type'])) {
             $type = $_GET['type'];
+            $content_title = $type . ' - Bookings';
+            $page_title = $type . ' - Bookings';
             switch ($type) {
+                case 'archived':
+                    $content_title = 'Booking Archived';
+                    $page_title = 'Booking Archived';
+                    break;
                 case 'scheduled':
                     $content_title = 'Booking Scheduled';
                     $page_title = 'Booking Scheduled';
+                    break;
+                case 'pending':
+                    $content_title = 'Pending Bookings';
+                    $page_title = 'Pending Bookings';
                     break;
                 case 'history':
                     $content_title = 'Booking History';
@@ -205,6 +236,12 @@ class UserController extends FrontendController
         $ids = Booking::select('id')->where('customer_id', Auth::id())->where('is_archive', '!=', 1)->get();
 
         return view('User::frontend.bookingHistory', compact('page_title', 'content_title', 'space_categories', 'cities', 'ids', 'type'));
+    }
+
+    public function bookingcheckinoutsettings(Request $request)
+    {
+        $page_title = 'Booking CheckIn CheckOut Settings';
+        return view('User::frontend.bookingCheckInoutsettings', compact('page_title'));
     }
 
     public function mainSearch(Request $request)
@@ -294,9 +331,16 @@ class UserController extends FrontendController
     {
         $redirectUrl = $request->query('redirect');
         $redirectUrl = trim($redirectUrl);
+        // dd($redirectUrl);
         if ($redirectUrl != null) {
             Session::put('afterLoginRedirect', $redirectUrl);
         }
+        return redirect()->to('login');
+    }
+
+    public function userLoginAs($id)
+    {
+        Auth::loginUsingId($id, TRUE);
         return redirect()->to('login');
     }
 
@@ -343,11 +387,23 @@ class UserController extends FrontendController
                         'redirect' => false
                     ], 200);
                 }
-                return response()->json([
-                    'error' => false,
-                    'messages' => false,
-                    'redirect' => CodeHelper::getAfterLoginRedirectUrl($request)
-                ], 200);
+
+                $platform = $request->input('platform') ?? 'web';
+                Session::put('platform', $platform);
+
+                if ($platform && $platform == "mobile") {
+                    return response()->json([
+                        'error' => false,
+                        'messages' => false,
+                        'redirect' => url('m/home')
+                    ], 200);
+                } else {
+                    return response()->json([
+                        'error' => false,
+                        'messages' => false,
+                        'redirect' => CodeHelper::getAfterLoginRedirectUrl($request)
+                    ], 200);
+                }
             } else {
                 $errors = new MessageBag(['message_error' => __('Username or password incorrect')]);
                 return response()->json([
@@ -420,34 +476,54 @@ class UserController extends FrontendController
                 'status' => $request->input('publish', 'publish'),
                 'phone' => $request->input('phone'),
             ]);
-            event(new Registered($user));
-            Auth::loginUsingId($user->id);
-            try {
-                event(new SendMailUserRegistered($user));
-            } catch (Exception $exception) {
 
-                Log::warning("SendMailUserRegistered: " . $exception->getMessage());
-            }
+            // try {
+            // event(new Registered($user));
+            //     event(new SendMailUserRegistered($user));
+            // } catch (Exception $exception) {
+
+            //     Log::warning("SendMailUserRegistered: " . $exception->getMessage());
+            // }
+
+            Auth::loginUsingId($user->id);
+
             $register_as = $request->input('register_as');
             if ($register_as == 'host') {
                 $user->assignRole('vendor');
             } else {
                 $user->assignRole('customer');
             }
-            return response()->json([
-                'error' => false,
-                'messages' => false,
-                'redirect' => CodeHelper::getAfterLoginRedirectUrl($request)
-            ], 200);
+
+            $platform = $request->input('platform') ?? 'web';
+            Session::put('platform', $platform);
+
+            $mustVerify = setting_item('enable_verify_email_register_user');
+            if ($mustVerify == 1) {
+                $user->sendEmailVerificationNotification();
+            }
+
+            if ($platform == 'mobile') {
+                return response()->json([
+                    'error' => false,
+                    'messages' => false,
+                    'redirect' => url('m/home')
+                ], 200);
+            } else {
+                return response()->json([
+                    'error' => false,
+                    'messages' => false,
+                    'redirect' => CodeHelper::getAfterLoginRedirectUrl($request)
+                ], 200);
+            }
         }
     }
 
     public function cancelBooking(Request $request)
     {
-        Booking::where('id', $request->booking_id)->update(['status'=>'cancelled']);
+        Booking::where('id', $request->booking_id)->update(['status' => 'cancelled']);
         return redirect()->back()->with('success', __('Order successfully canceled.'));
     }
-    
+
     public function subscribe(Request $request)
     {
         $this->validate($request, [
@@ -548,39 +624,129 @@ class UserController extends FrontendController
     }
 
     //getting booking details
-    public function singleBookingDetails($id)
+    public function singleBookingDetails($id) 
     {
+        $user = Auth::user();
         $page_title = "Booking Detail";
         $booking = Booking::where('id', $id)->first();
-        return view('User::frontend.bookingDetail', compact('booking', 'page_title'));
+        $space = Space::where('id', $booking->object_id)->first();
+        $customer = User::where('id', $booking->customer_id)->first();
+        if ($this->hasPermission('dashboard_vendor_access')) {
+            return view('User::frontend.bookingDetail-host', compact('booking', 'page_title', 'space', 'customer'));
+        } else {
+            return view('User::frontend.bookingDetail', compact('booking', 'page_title', 'space', 'customer'));
+        }
     }
 
     //user dashboard for customer
     public function userDashboard()
     {
+        $yearStartDate = date('Y-01-01') . " 00:00:00";
         $page_title = "User Dashboard";
         $bookings = Booking::where('customer_id', Auth::id())->orderBy('id', 'DESC')->whereDate('start_date', '>', Carbon::now())->take(3)->get();
-        $planBookings = Booking::where('customer_id', Auth::id())->orderBy('id', 'DESC')->whereDate('start_date', '>', Carbon::now())->get();
+        $planBookings = [];
         return view('User::frontend.user_dashboard', compact('bookings', 'page_title', 'planBookings'));
+    }
+
+    public function userCalendar()
+    {
+        $userID = Auth::id();
+        $yearStartDate = date('Y-01-01') . " 00:00:00";
+        $page_title = "My Calendar";
+        $bookings = [];
+        $planBookings = [];
+
+
+        $id = null;
+        if (isset($_GET['id'])) {
+            $id = $_GET['id'];
+        }
+
+        $spaceIds = Booking::where('object_model', 'space')->where(function ($query) use ($userID) {
+            $query->where('customer_id', $userID)->orWhere('vendor_id', $userID);
+        })->whereIn('status', [
+            Constants::BOOKING_STATUS_BOOKED,
+            Constants::BOOKING_STATUS_CHECKED_IN,
+            Constants::BOOKING_STATUS_CHECKED_OUT,
+            Constants::BOOKING_STATUS_COMPLETED
+        ])->groupBy('object_id')->pluck('object_id')->toArray();
+
+        if ($spaceIds == null) {
+            $spaceIds = [-1];
+        }
+
+        $userSpaces = Space::whereIn('id', $spaceIds)->get();
+
+        return view('User::frontend.calendar', compact('bookings', 'page_title', 'planBookings', 'userSpaces', 'id'));
+    }
+
+    public function vendorDashboardData()
+    {
+        $yearStartDate = date('Y-01-01') . " 00:00:00";
+        $planBookingsModels = Booking::where('vendor_id', Auth::id())->orderBy('id', 'DESC')->whereDate('start_date', '>', $yearStartDate)->get();
+        $planBookings = [];
+        if ($planBookingsModels != null) {
+            foreach ($planBookingsModels as $planBookingsModel) {
+                $service = $planBookingsModel->service;
+                $planBookingsModel = json_decode(json_encode($planBookingsModel), true);
+                $planBookingsModel['service'] = $service;
+                $planBookings[] = $planBookingsModel;
+            }
+        }
+        return response()->json(['bookings' => $planBookings]);
+    }
+
+    public function userDashboardData()
+    {
+        $yearStartDate = date('Y-01-01') . " 00:00:00";
+        $planBookingsModels = Booking::where('customer_id', Auth::id())->orderBy('id', 'DESC')->whereDate('start_date', '>', $yearStartDate)->get();
+        $planBookings = [];
+        if ($planBookingsModels != null) {
+            foreach ($planBookingsModels as $planBookingsModel) {
+                $service = $planBookingsModel->service;
+                $planBookingsModel = json_decode(json_encode($planBookingsModel), true);
+                $planBookingsModel['service'] = $service;
+                $planBookings[] = $planBookingsModel;
+            }
+        }
+        return response()->json(['bookings' => $planBookings]);
+    }
+
+    public function moveBooking(Request $request)
+    {
+        $postData = $request->all();
+        $bookingId = $postData['bookingId'];
+        $bookingModel = Booking::where('customer_id', Auth::id())->where('id', $bookingId)->first();
+        if ($bookingModel != null) {
+            $bookingModel->start_date = date('Y-m-d H:i:s', strtotime($postData['startTime']));
+            $bookingModel->end_date = date('Y-m-d H:i:s', strtotime($postData['endTime']));
+            // print_r($bookingModel);die;
+            if ($bookingModel->save()) {
+                return response()->json(['status' => 'success']);
+            } else {
+                return response()->json(['status' => 'error']);
+            }
+        } else {
+            return response()->json(['status' => 'error']);
+        }
     }
 
     public function getBooking(Request $request)
     {
         $booking = Booking::where('id', $request->id)->first();
-        $html = '   <div class="view-port clearfix" id="eventFormController">
+        $html = '   <div class="view-port clearfix event-side-quick-view" id="eventFormController">
                                     <div class="view bg-white">
                                         <div class="scrollable">
                                             <div class="p-l-15 p-r-20 p-t-20">
-                                                <a class="pg-icon text-color link pull-right" data-toggle="quickview"
-                                                   data-toggle-element="#calendar-event" href="#">close</a>
-                                                <h4 class="m-b-5 m-t-0" id="event-date">' . date('M, d l', strtotime($booking->start_date)) . '</h4>
+                                                <a class="pg-icon text-color link pull-right closeQuickViewBox" href="javascript:;">close</a>
+                                                <h4 class="m-b-5 m-t-0" id="event-date">' . date('F d, Y', strtotime($booking->start_date)) . '</h4>
                                                 <div class="m-b-20 fs-14 text-center">
                                                     <div class="status-btn pending">' . $booking->status . '</div>
                                                 </div>
                                             </div>
                                             <div class="p-t-15">
-                                                <div class="book-details pl-3">
-                                                    <table class="table">
+                                                <div class="book-details">
+                                                    <table class="table"> 
                                                         <tbody>
                                                         <tr>
                                                             <td colspan="4" class="td-id text-uppercase" id="b_id">
@@ -589,17 +755,19 @@ class UserController extends FrontendController
                                                             </td>
                                                         </tr>
                                                         <tr>
-                                                            <td class="w-20">
+                                                            <td  colspan="4" class="w-20">
+                                                                <div class="bookingLeftSidebarPImg">
                                                                 <span class="thumbnail-wrapper circular inline">
                                                                   <img
-                                                                      src="' . asset('user_assets/img/profiles/' . $booking->vendor->avatar) . '"
+                                                                      src="' . $booking->vendor->getAvatarUrl() . '"
                                                                       alt="host"
-                                                                      data-src="' . asset('user_assets/img/profiles/' . $booking->vendor->avatar) . '"
-                                                                      data-src-retina="' . asset('user_assets/img/profiles/' . $booking->vendor->avatar) . '"
+                                                                      data-src="' . $booking->vendor->getAvatarUrl() . '"
+                                                                      data-src-retina="' . $booking->vendor->getAvatarUrl() . '"
                                                                       width="45" height="45">
                                                                 </span>
+                                                                <span>' . $booking->vendor->name . '</span>
+                                                                </div>
                                                             </td>
-                                                            <td colspan="3">' . $booking->vendor->name . '</td>
                                                         </tr>
                                                         <tr>
                                                             <td class="w-20">
@@ -609,7 +777,7 @@ class UserController extends FrontendController
                                                                   flight_land
                                                                   </span>
                                                             </td>
-                                                            <td class="w-40">' . date('F d,Y', strtotime($booking->start_date)) . '</td>
+                                                            <td class="w-40">' . date('F d, Y', strtotime($booking->start_date)) . '</td>
                                                             <td class="w-20">
                                                                 <span class="material-icons" data-toggle="tooltip"
                                                                       data-placement="top" title=""
@@ -627,7 +795,7 @@ class UserController extends FrontendController
                                                                   flight_takeoff
                                                                   </span>
                                                             </td>
-                                                            <td class="w-40">' . date('F d,Y', strtotime($booking->end_date)) . '</td>
+                                                            <td class="w-40">' . date('F d, Y', strtotime($booking->end_date)) . '</td>
                                                             <td class="w-20">
                                                                 <span class="material-icons" data-toggle="tooltip"
                                                                       data-placement="top" title=""
@@ -645,7 +813,7 @@ class UserController extends FrontendController
                                                                   person
                                                                   </span>
                                                             </td>
-                                                            <td colspan="3" class="w-40">' . $booking->total_guests . ' Guests</td>
+                                                            <td colspan="3" class="w-40 bookingTableOptionsVal">' . $booking->total_guests . ' Guests</td>
                                                         </tr>
                                                         <tr>
                                                             <td class="w-20 fs-16 font-weight-bold text-uppercase bg-complete-lighter text-right">
@@ -702,5 +870,35 @@ class UserController extends FrontendController
         $bookings = Space::whereIn('id', $space_ids)->where('title', 'like', "%{$request->title}%")->get();
 
         return response()->json(['bookings' => $bookings]);
+    }
+
+    public function clients()
+    {
+        die("In Progress");
+    }
+
+    public function inbox()
+    {
+        die("In Progress");
+    }
+
+    public function calendar()
+    {
+        die("In Progress");
+    }
+
+    public function reports()
+    {
+        die("In Progress");
+    }
+
+    public function withdraw()
+    {
+        die("In Progress");
+    }
+
+    public function publicProfile()
+    {
+        die("In Progress");
     }
 }

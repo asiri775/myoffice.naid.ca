@@ -9,6 +9,7 @@ Route::get('/edit/{id}','SpaceController@edit')->name('space.admin.edit');
 Route::post('/store/{id}','SpaceController@store')->name('space.admin.store');
 Route::post('/bulkEdit','SpaceController@bulkEdit')->name('space.admin.bulkEdit');
 Route::get('/recovery','SpaceController@recovery')->name('space.admin.recovery');
+Route::get('/default-content','SpaceController@defaultContent')->name('space.admin.defaultContent');
 Route::get('/getForSelect2','SpaceController@getForSelect2')->name('space.admin.getForSelect2');
 Route::get('/getForSelect2','SpaceController@getForSelect2')->name('space.admin.getForSelect2');
 
@@ -16,6 +17,7 @@ Route::get('/getForSelect2','SpaceController@getForSelect2')->name('space.admin.
 Route::group(['prefix'=>'attribute'],function (){
     Route::get('/','AttributeController@index')->name('space.admin.attribute.index');
     Route::get('edit/{id}','AttributeController@edit')->name('space.admin.attribute.edit');
+    Route::get('delete/{id}','AttributeController@delete')->name('space.admin.attribute.delete');
     Route::post('store/{id}','AttributeController@store')->name('space.admin.attribute.store');
     Route::post('/editAttrBulk','AttributeController@editAttrBulk')->name('space.admin.attribute.editAttrBulk');
 

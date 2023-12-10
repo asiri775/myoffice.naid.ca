@@ -2,6 +2,8 @@
 
 namespace Modules\Booking\Controllers;
 
+use App\Helpers\CodeHelper;
+use App\Helpers\Constants;
 use App\Notifications\AdminChannelServices;
 use App\User;
 use DebugBar\DebugBar;
@@ -16,13 +18,21 @@ use Modules\Booking\Events\BookingUpdatedEvent;
 use Modules\Booking\Events\EnquirySendEvent;
 use Modules\Booking\Events\SetPaidAmountEvent;
 use Modules\Tour\Models\TourDate;
+
+use Modules\Space\Models\Space;
+use PHPMailer\PHPMailer\PHPMailer;
+
 use Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Modules\Booking\Models\Booking;
-use Modules\Booking\Models\Payment;
 use Modules\Booking\Models\Enquiry;
 use App\Helpers\ReCaptchaEngine;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
+use Modules\User\Events\SendMailUserRegistered;
 
 class BookingController extends \App\Http\Controllers\Controller
 {
@@ -32,6 +42,7 @@ class BookingController extends \App\Http\Controllers\Controller
     protected $enquiryClass;
     protected $bookingInst;
 
+
     public function __construct()
     {
         $this->booking = Booking::class;
@@ -40,18 +51,28 @@ class BookingController extends \App\Http\Controllers\Controller
 
     protected function validateCheckout($code)
     {
+        $enableGuest = is_enable_guest_checkout();
+        $enableGuest = true;
 
-        if (!is_enable_guest_checkout() and !Auth::check()) {
-            return $this->sendError(__("You have to login in to do this"))->setStatusCode(401);
+        if (!$enableGuest and !Auth::check()) {
+            $currenturl = url()->current();
+            return redirect()->route('auth.redirectLogin', ['redirect' => $currenturl]);
+            // return $this->sendError(__("You have to login in to do this"))->setStatusCode(401);
         }
 
         $booking = $this->booking::where('code', $code)->first();
 
-        $this->bookingInst = $booking;
+        $this->bookingInst = $booking; 
 
         if (empty($booking)) {
             abort(404);
         }
+
+        if ($booking->customer_id == null) {
+            $booking->customer_id = Auth::id();
+            $booking->save();
+        }
+
         if (!is_enable_guest_checkout() and $booking->customer_id != Auth::id()) {
             abort(404);
         }
@@ -63,6 +84,12 @@ class BookingController extends \App\Http\Controllers\Controller
         $res = $this->validateCheckout($code);
         if ($res !== true) return $res;
 
+        $fullUrl = CodeHelper::getCurrentUrl();
+
+        if (!Auth::check()) {
+            Session::put('afterLoginRedirect', $fullUrl);
+        }
+
         $booking = $this->bookingInst;
 
         if (!in_array($booking->status, ['draft', 'unpaid'])) {
@@ -70,6 +97,10 @@ class BookingController extends \App\Http\Controllers\Controller
         }
 
         $is_api = request()->segment(1) == 'api';
+
+        $bookingPriceInfo = CodeHelper::getBookingPriceInfo($booking);
+        $booking = CodeHelper::assignSpacePricingToBooking($booking, $bookingPriceInfo);
+        $booking->save();
 
         $data = [
             'page_title' => __('Checkout'),
@@ -79,7 +110,15 @@ class BookingController extends \App\Http\Controllers\Controller
             'user' => Auth::user(),
             'is_api' => $is_api
         ];
-        return view('Booking::frontend/checkout', $data);
+
+        $platform  = request()->platform;
+        Session::put('platform', $platform);
+
+        if ($platform == 'mobile') {
+            return view('Booking::frontend/checkout_mobile', $data);
+        } else {
+            return view('Booking::frontend/checkout', $data);
+        }
     }
 
     public function checkStatusCheckout($code)
@@ -115,13 +154,16 @@ class BookingController extends \App\Http\Controllers\Controller
     {
 
         $request = \request();
-        if (!is_enable_guest_checkout() and !Auth::check()) {
-            return $this->sendError(__("You have to login in to do this"))->setStatusCode(401);
-        }
 
-        if (Auth::user() && !Auth::user()->hasVerifiedEmail() && setting_item('enable_verify_email_register_user') == 1) {
-            return $this->sendError(__("You have to verify email first"), ['url' => url('/email/verify')]);
-        }
+        // if (!is_enable_guest_checkout() and !Auth::check()) {
+        //     return $this->sendError(__("You have to login in to do this"), [
+        //         'errorCode' => 'loginRequired'
+        //     ])->setStatusCode(401);
+        // }
+
+        // if (Auth::user() && !Auth::user()->hasVerifiedEmail() && setting_item('enable_verify_email_register_user') == 1) {
+        //     return $this->sendError(__("You have to verify email first"), ['url' => url('/email/verify')]);
+        // }
         /**
          * @param Booking $booking
          */
@@ -187,7 +229,6 @@ class BookingController extends \App\Http\Controllers\Controller
             'country' => 'required',
             'term_conditions' => 'required',
         ];
-        
         $how_to_pay = $request->input('how_to_pay', '');
         $credit = $request->input('credit', 0);
         $payment_gateway = $request->input('payment_gateway');
@@ -218,6 +259,76 @@ class BookingController extends \App\Http\Controllers\Controller
             }
         }
 
+        $userModel = null;
+
+        $email = $request->input('email');
+
+        if (!Auth::check()) {
+            if ($request->input('password') == null || $request->input('confirm_password') == null) {
+                return $this->sendError(__("Please fill password fields"), [
+                    'errorCode' => 'loginRequired'
+                ])->setStatusCode(401);
+            } else {
+
+                if ($request->input('password') != $request->input('confirm_password')) {
+                    return $this->sendError(__("Confirm password should be same as New Password"), [
+                        'errorCode' => 'loginRequired'
+                    ])->setStatusCode(401);
+                }
+
+
+                $userModel = User::where('email', $email)->first();
+                if ($userModel !== null) {
+                    return $this->sendError(__("You already have an account, please login first to continue"), [
+                        'errorCode' => 'loginRequired'
+                    ])->setStatusCode(401);
+                } else {
+
+                    //
+
+                    //create account
+                    $userModel = User::create([
+                        'name' => $request->input('first_name') . " " . $request->input('last_name'),
+                        'first_name' => $request->input('first_name'),
+                        'last_name' => $request->input('last_name'),
+                        'email' => $request->input('email'),
+                        'password' => Hash::make($request->input('password'),),
+                        'status' => 'publish'
+                    ]);
+                    $userModel->assignRole('customer');
+                    $userModel->save();
+
+                    try {
+                        event(new Registered($user));
+                        // event(new SendMailUserRegistered($userModel));
+                    } catch (Exception $exception) {
+                        Log::warning("SendMailUserRegistered: " . $exception->getMessage());
+                    }
+
+                    $userModel = User::where('email', $email)->first();
+                }
+            }
+
+            if ($userModel != null) {
+                Auth::login($userModel, true);
+                // return $this->sendSuccess([
+                //     'errorCode' => 'failedssss'
+                // ], __("You payment has been processed successfully"));
+            }
+        } else {
+            $userModel = User::where('email', $email)->first();
+        }
+
+        if ($userModel == null) {
+            return $this->sendError(__("Failed to process, please contact support"), [
+                'errorCode' => 'failed'
+            ])->setStatusCode(401);
+        }
+
+        // if (Auth::user() && !Auth::user()->hasVerifiedEmail() && setting_item('enable_verify_email_register_user') == 1) {
+        //     return $this->sendError(__("You have to verify email first"), ['url' => url('/email/verify')]);
+        // }
+
         $wallet_total_used = credit_to_money($credit);
         if ($wallet_total_used > $booking->total) {
             $credit = money_to_credit($booking->total, true);
@@ -228,11 +339,22 @@ class BookingController extends \App\Http\Controllers\Controller
             return $res;
         }
 
+        $phoneNo = $request->input('phone');
+
+        $otherUserWithMobileNo = User::where('phone', $phoneNo)->where('id', '!=', $userModel->id)->first();
+        if($otherUserWithMobileNo!=null){
+            return $this->sendError(__("The phone has already been taken."), [
+                'errorCode' => 'failed'
+            ])->setStatusCode(401);
+        }
+
         // Normal Checkout
+        $booking->customer_id = $userModel->id;
+
         $booking->first_name = $request->input('first_name');
         $booking->last_name = $request->input('last_name');
         $booking->email = $request->input('email');
-        $booking->phone = $request->input('phone');
+        $booking->phone = $phoneNo;
         $booking->address = $request->input('address_line_1');
         $booking->address2 = $request->input('address_line_2');
         $booking->city = $request->input('city');
@@ -258,7 +380,6 @@ class BookingController extends \App\Http\Controllers\Controller
                     $booking->wallet_total_used = floatval($wallet_total_used);
                     $booking->wallet_credit_used = money_to_credit($wallet_total_used, true);
                 }
-
             }
 
             $booking->pay_now = max(0, $booking->pay_now - $wallet_total_used);
@@ -288,7 +409,6 @@ class BookingController extends \App\Http\Controllers\Controller
                 $transaction = $user->withdraw($booking->wallet_credit_used, [
                     'wallet_total_used' => $booking->wallet_total_used
                 ]);
-
             } catch (\Exception $exception) {
                 return $this->sendError($exception->getMessage());
             }
@@ -299,7 +419,9 @@ class BookingController extends \App\Http\Controllers\Controller
         }
         $booking->save();
 
-//        event(new VendorLogPayment($booking));
+
+
+        //        event(new VendorLogPayment($booking));
 
         if (Auth::check()) {
             $user = Auth::user();
@@ -324,22 +446,114 @@ class BookingController extends \App\Http\Controllers\Controller
 
         if ($booking->pay_now > 0) {
             try {
-                $gatewayObj->process($request, $booking, $service);
+                $url = $gatewayObj->process($request, $booking, $service, true);
+                return $this->sendSuccess([
+                    'url' => $url
+                ], __("You payment has been processed successfully"));
             } catch (Exception $exception) {
                 return $this->sendError($exception->getMessage());
             }
         } else {
             if ($booking->paid < $booking->total) {
-                $booking->status = $booking::PARTIAL_PAYMENT;
+                $booking->payment_status = Constants::PAYMENT_PARTIALLY_PAID;
             } else {
-                $booking->status = $booking::PAID;
+                $booking->payment_status = Constants::PAYMENT_PAID;
             }
 
             if (!empty($booking->coupon_amount) and $booking->coupon_amount > 0 and $booking->total == 0) {
-                $booking->status = $booking::PAID;
+                $booking->payment_status = Constants::PAYMENT_PAID;
             }
 
             $booking->save();
+
+            //booking thank you email
+            $id = $booking->id;
+            $booking = Booking::where('id', $id)->first();
+            $receiveremail = $booking->email;
+            $starttime = $booking->start_time;
+            $endtime = $booking->end_time;
+            $bookingtotal = $booking->total;
+            $bookinginvoicelink = url('user.booking.invoice') . "/" . $id;
+            $spaceid = $booking->object_id;
+            $space = Space::where('id', $spaceid)->first();
+            $spacename = $space->title;
+            $emailtext = "Dear " . $booking->total . "</br>";
+            $emailtext = $emailtext . "Thank you for booking the Space with MyOffice.ca.  The details are given below:";
+            $emailtext = $emailtext . "<table border='1'>";
+            $emailtext = $emailtext . "<tr><td>Space Name :</td><td>" . $spacename . "</td></tr>";
+            $emailtext = $emailtext . "<tr><td>Booking Start Time :</td><td>" . $starttime . "</td></tr>";
+            $emailtext = $emailtext . "<tr><td>Booking End Time :</td><td>" . $endtime . "</td></tr>";
+            $emailtext = $emailtext . "<tr><td>Booking Total :</td><td>$" . $bookingtotal . "</td></tr>";
+            $emailtext = $emailtext . "<tr><td>Booking Invoice :</td><td>$" . $bookinginvoicelink . "</td></tr>";
+            $emailtext = $emailtext . "</table><br/><br/>";
+
+            $settings = Settings::where('group','email')->get();
+            for ($i=0;$i<sizeof($settings);$i++)
+            {
+                if ($settings[$i]['name']=="email_driver")
+                {
+                $emaildriver=$settings[$i]['val'];	
+                }
+                if ($settings[$i]['name']=="email_host")
+                {
+                $emailhost=$settings[$i]['val'];	
+                }
+                if ($settings[$i]['name']=="email_port")
+                {
+                $emailport=$settings[$i]['val'];	
+                }
+                if ($settings[$i]['name']=="email_encryption")
+                {
+                $emailencryption=$settings[$i]['val'];	
+                }
+                if ($settings[$i]['name']=="email_username")
+                {
+                $emailusername=$settings[$i]['val'];	
+                }
+                if ($settings[$i]['name']=="email_password")
+                {
+                $emailuserpassword=$settings[$i]['val'];	
+                }
+            }	
+
+            $mail = new PHPMailer(true);     // Passing `true` enables exceptions
+            try {
+
+                // Email server settings
+                $mail->SMTPDebug = 0;
+                $mail->isSMTP();
+                $mail->Host =$emailhost;             //  smtp host
+
+                $mail->SMTPAuth = true;
+                $mail->Username = $emailusername;
+                $mail->Password = $emailuserpassword;       // sender password
+                $mail->SMTPSecure = $emailencryption;                  // encryption - ssl/tls
+                $mail->Port = $emailport;                          // port - 587/465
+                $mail->setFrom('admin@myoffice.ca','MyOffice');
+                $mail->addAddress($receiveremail);
+                $mail->addReplyTo('admin@myoffice.ca','MyOffice');
+
+                $mail->isHTML(true);                // Set email content format to HTML
+                //	$checkinurl="http://myofficedev.mybackpocket.co/user/booking-details/".$booking->id;
+                $checkinurl =  url('user/booking-details/') . "/" . $id;
+                $mail->Subject  = "Reminder Email for Guest Not Checked In";
+                $body      = "Dear" . $booking->first_name . ", <br/><br/>";
+                $body      = $body . $emailtext;
+                $body    = $body . "Thank you :" . "<br/><br/>";
+                $body    = $body . "Management MyOfice Team";
+                $mail->Body = $body;
+                $mail->AltBody = $body;
+
+                if (!$mail->send()) {
+                    //		return redirect()->back()->with('error', __('Error in Sending Thank you Email.'));
+                } else {
+                    //		return redirect()->back()->with('success', __('Thank you Email Sent.'));
+                }
+            } catch (Exception $e) {
+                //	    return redirect()->back()->with('error', __('Error in Sending Thank you Email.'));
+            }
+            //booking thank you email
+
             event(new BookingCreatedEvent($booking));
             return $this->sendSuccess([
                 'url' => $booking->getDetailUrl()
@@ -349,7 +563,6 @@ class BookingController extends \App\Http\Controllers\Controller
 
     public function confirmPayment(Request $request, $gateway)
     {
-
         $gateways = get_payment_gateways();
         if (empty($gateways[$gateway]) or !class_exists($gateways[$gateway])) {
             return $this->sendError(__("Payment gateway not found"));
@@ -383,12 +596,12 @@ class BookingController extends \App\Http\Controllers\Controller
      */
     public function addToCart(Request $request)
     {
-        if (!is_enable_guest_checkout() and !Auth::check()) {
-            return $this->sendError(__("You have to login in to do this"))->setStatusCode(401);
-        }
-        if (Auth::user() && !Auth::user()->hasVerifiedEmail() && setting_item('enable_verify_email_register_user') == 1) {
-            return $this->sendError(__("You have to verify email first"), ['url' => url('/email/verify')]);
-        }
+        // if (!is_enable_guest_checkout() and !Auth::check()) {
+        //     return $this->sendError(__("You have to login in to do this"))->setStatusCode(401);
+        // }
+        // if (Auth::user() && !Auth::user()->hasVerifiedEmail() && setting_item('enable_verify_email_register_user') == 1) {
+        //     return $this->sendError(__("You have to verify email first"), ['url' => url('/email/verify')]);
+        // }
 
         $validator = Validator::make($request->all(), [
             'service_id' => 'required|integer',
@@ -462,21 +675,19 @@ class BookingController extends \App\Http\Controllers\Controller
         if ($booking->gateway) {
             $data['gateway'] = get_payment_gateway_obj($booking->gateway);
         }
-        if($booking->gateway=='offline_payment'){
-            if ($booking->status != 'partial_payment') {
-                Payment::create(array('status' =>'paid','booking_id'=>$booking->id,'amount'=>$booking->total,'currency'=>'CAD'));
-            } else {
-                Payment::create(array('status' =>'partial','booking_id'=>$booking->id,'amount'=>$booking->wallet_total_used,'currency'=>'CAD'));
-            }
-        }
 
-       if ($booking->status != 'partial_payment') {
-        $booking->status = 'complete';
-        $booking->paid=$booking->total;
-        $booking->is_paid = 1;
-        } 
-        $booking->save();
 
+        // $booking->status = 'scheduled';
+        // $booking->paid = $booking->total;
+        // $booking->is_paid = 1;
+        // $booking->save();
+
+        // if ($booking->payment != null) {
+        //     $booking->payment->status = 'paid';
+        //     $booking->payment->amount = $booking->total;
+        //     $booking->payment->currency = "CAD";
+        //     $booking->payment->save();
+        // }
 
         return view('Booking::frontend/detail', $data);
     }
@@ -595,8 +806,8 @@ class BookingController extends \App\Http\Controllers\Controller
         $booking->paid = floatval($booking->total) - $remain;
         event(new SetPaidAmountEvent($booking));
         if ($remain == 0) {
-            $booking->status = $booking::PAID;
-//            $booking->sendStatusUpdatedEmails();
+            $booking =  $booking->markAsCompleted();
+            //            $booking->sendStatusUpdatedEmails();
             event(new BookingUpdatedEvent($booking));
         }
 
@@ -607,11 +818,67 @@ class BookingController extends \App\Http\Controllers\Controller
         ]);
     }
 
-    public function updateTxnToken(Request $request)
+    public function updateMassBooking(Request $request)
     {
-        $preHash =$request->input('pre_hash');
-        $pay_amount =$request->input('pay_amount');
-        $hashedToken = str_replace('-amount-',$pay_amount,$preHash);
-        echo $hashedToken = hash('sha256', $hashedToken);
+        $user = auth()->user();
+        $ids = explode(',', $request->input('ids'));
+        $ids = CodeHelper::cleanArray($ids);
+        $status = $request->input('status');
+        if (count($ids) > 0) {
+            Booking::where('vendor_id', $user->id)->whereIn('id', $ids)->update(['status' => $status]);
+            return redirect()->back()->with('success', 'Booking(s) has been updated');
+        } else {
+            return redirect()->back()->with('error', 'Select atleast one booking');
+        }
+    }
+
+
+    public function updateSingleBooking(Request $request)
+    {
+        $user = auth()->user();
+        $postData = $_POST;
+        $bookingId = $postData['id'];
+        if ($bookingId != null) {
+            $booking = Booking::where('id', $bookingId)->first();
+            if ($booking != null) {
+                $space = Space::where('id', $booking->object_id)->first();
+
+                if (array_key_exists('from', $postData)) {
+                    $start_date = $postData['from'];
+                    $startHour = $postData['from_time'];
+
+                    $end_date = $postData['to'];
+                    $endHour = $postData['to_time'];
+
+                    $startDate = $start_date . " " . $startHour . ":01 ";
+                    $startDate = date('Y-m-d H:i:s', strtotime($startDate));
+
+                    $toDate = $end_date . " " . $endHour . ":00 ";
+                    $toDate = date('Y-m-d H:i:s', (strtotime($toDate) - 0));
+
+                    $bookingPriceInfo = CodeHelper::getSpacePrice($space, $startDate, $toDate);
+
+                    $booking->start_date = $startDate;
+                    $booking->end_date = $toDate;
+
+                    $booking = CodeHelper::assignSpacePricingToBooking($booking, $bookingPriceInfo);
+                    // dd($booking);
+                }
+
+                if (array_key_exists('status', $postData)) {
+                    $booking->status = $postData['status'];
+                }
+                if (array_key_exists('guest', $postData)) {
+                    $booking->total_guests = $postData['guest'];
+                }
+
+                $booking->save();
+                return redirect()->back()->with('success', 'Booking has been updated');
+            } else {
+                return redirect()->back()->with('error', 'Booking not found');
+            }
+        } else {
+            return redirect()->back()->with('error', 'Invalid Request');
+        }
     }
 }

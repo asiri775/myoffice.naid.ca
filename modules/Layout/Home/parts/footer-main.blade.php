@@ -616,8 +616,6 @@
 
 </script>
 
-<script type="text/javascript"
-        src="{{ asset('module/space/js/space-map.js?v=1&_ver='.config('app.version')) }}"></script>
 
 <script type="text/javascript">
 
@@ -973,6 +971,7 @@
 
 <link rel="stylesheet" href="{{ asset('css/superslides.css') }}">
 
+
 <script type="text/javascript" src="{{ asset('js/jquery.superslides.js') }}"></script>
 <script type='text/javascript'>
     $(document).ready(function () {
@@ -983,6 +982,12 @@
         });
     })
 </script>
+
+<script type="text/javascript" src="{{ url('module/core/js/map-engine.js?_ver=' . config('app.version')) }}"></script>
+    {!! App\Helpers\MapEngine::scripts() !!}
+
+<script type="text/javascript"
+        src="{{ asset('module/space/js/space-map.js?v=1&t='.time().'&_ver='.config('app.version')) }}"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"></script>
 
@@ -1004,7 +1009,7 @@
 <script src='https://unpkg.com/@google/markerclustererplus@4.0.1/dist/markerclustererplus.min.js'></script>
 
 <script type="text/javascript" src="{{ asset('js/select2.js') }}"></script>
-<script src="{{\App\Helpers\CodeHelper::withAppUrl('js/home.js')}}?v=1"></script>
+<script src="{{\App\Helpers\CodeHelper::withAppUrl('js/home.js')}}?v={{time()}}"></script>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
 

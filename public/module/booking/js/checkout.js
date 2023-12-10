@@ -13,6 +13,7 @@
         },
         methods: {
             doCheckout() {
+                console.log("dsfsdfsdf");
                 /*if(!isBookingConfirmBoxShowed) {
                     isBookingConfirmBoxShowed = confirm('By continue, you are agree to our terms and conditions');
                 }*/
@@ -32,10 +33,10 @@
                         data: $('.booking-form').find('input,textarea,select').serialize(),
                         method: "post",
                         success: function (res) {
+
                             if (!res.status && !res.url) {
                                 me.onSubmit = false;
                             }
-
 
                             if (res.elements) {
                                 for (var k in res.elements) {
@@ -49,7 +50,9 @@
                             }
 
                             if (res.url) {
-                                window.location.href = res.url
+                                setTimeout((e)=>{
+                                    window.location.href = res.url
+                                }, 1200);
                             }
 
                             if (res.errors && typeof res.errors == 'object') {
@@ -66,6 +69,14 @@
                             if (e.responseJSON) {
                                 me.message.content = e.responseJSON.message ? e.responseJSON.message : 'Can not booking';
                                 me.message.type = false;
+
+                                let res = e.responseJSON;
+                                if (res.errorCode === "loginRequired") {
+                                    
+                                }
+
+                                //console.log("res", res);
+
                             } else {
                                 if (e.responseText) {
                                     me.message.content = e.responseText;

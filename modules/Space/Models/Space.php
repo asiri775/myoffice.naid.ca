@@ -3,6 +3,8 @@
 namespace Modules\Space\Models;
 
 use App\Currency;
+use App\Helpers\CodeHelper;
+use App\Helpers\Constants;
 use Illuminate\Http\Response;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Arr;
@@ -22,7 +24,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Space\Models\SpaceTranslation;
 use Modules\User\Models\UserWishList;
 use Modules\Location\Models\Location;
+use App\Models\AddToFavourite;
+
+
 use App\User;
+use Illuminate\Support\Facades\Session;
 
 class Space extends Bookable
 {
@@ -38,11 +44,42 @@ class Space extends Bookable
     public $email_new_booking_file = 'Space::emails.new_booking_detail';
     public $availabilityClass = SpaceDate::class;
 
+    public $callUpdateStats = true;
+
+    public static function boot()
+    {
+        parent::boot();
+
+        self::created(function ($model) {
+            $model->checkIfNeedToUpdate();
+        });
+
+        self::updated(function ($model) {
+            $model->checkIfNeedToUpdate();
+        });
+    }
+
+    public function checkIfNeedToUpdate()
+    {
+        if ($this->callUpdateStats) {
+            $this->callUpdateStats = false;
+            $this->updateStats();
+        } else {
+            $this->callUpdateStats = true;
+        }
+    }
+
     protected $fillable = [
+        'total_bookings',
         'title',
+        'alias',
+        'house_rules',
+        'tos',
         'content',
         'status',
-        'faqs'
+        'faqs',
+        'free_cancellation',
+        'accessible_workspace'
     ];
     protected $slugField = 'slug';
     protected $slugFromField = 'title';
@@ -171,7 +208,6 @@ class Space extends Bookable
             if (!empty($end = request()->input('end'))) {
                 $param['end'] = $end;
             }
-
         }
         $urlDetail = app_get_locale(false, false, '/') . config('space.space_route_prefix') . "/" . $this->slug;
         if (!empty($param)) {
@@ -216,7 +252,8 @@ class Space extends Bookable
 
     public function getDiscountPercentAttribute()
     {
-        if (!empty($this->price) and $this->price > 0
+        if (
+            !empty($this->price) and $this->price > 0
             and !empty($this->sale_price) and $this->sale_price > 0
             and $this->price > $this->sale_price
         ) {
@@ -244,9 +281,9 @@ class Space extends Bookable
 
     public function addToCart(Request $request)
     {
-
         $res = $this->addToCartValidate($request);
-        if ($res !== true) return $res;
+        if ($res !== true)
+            return $res;
 
         // Add Booking
         $total_guests = $request->input('adults') + $request->input('children');
@@ -260,17 +297,17 @@ class Space extends Bookable
         $start_date = new \DateTime($start_date);
         $end_date = new \DateTime($end_date);
 
-//        $start_ampm = isset($_POST['start_ampm']) ? trim($_POST['start_ampm']) : null;
-//        $end_ampm = isset($_POST['end_ampm']) ? trim($_POST['end_ampm']) : null;
-//        if ($start_ampm == 'PM') {
-//            $startHour = $startHour . " " . $start_ampm;
-//            $startHour = date("H:i", strtotime($startHour));
-//        }
-//        $endHour = isset($_POST['end_hour']) ? trim($_POST['end_hour']) : null;
-//        if ($end_ampm == 'PM') {
-//            $endHour = $endHour . " " . $end_ampm;
-//            $endHour = date("H:i", strtotime($endHour));
-//        }
+        //        $start_ampm = isset($_POST['start_ampm']) ? trim($_POST['start_ampm']) : null;
+        //        $end_ampm = isset($_POST['end_ampm']) ? trim($_POST['end_ampm']) : null;
+        //        if ($start_ampm == 'PM') {
+        //            $startHour = $startHour . " " . $start_ampm;
+        //            $startHour = date("H:i", strtotime($startHour));
+        //        }
+        //        $endHour = isset($_POST['end_hour']) ? trim($_POST['end_hour']) : null;
+        //        if ($end_ampm == 'PM') {
+        //            $endHour = $endHour . " " . $end_ampm;
+        //            $endHour = date("H:i", strtotime($endHour));
+        //        }
 
         if ($startHour != null && $endHour != null) {
 
@@ -283,94 +320,116 @@ class Space extends Bookable
 
             $extra_price = [];
 
-            $total = $this->getPriceInRanges($request->input('start_date'), $request->input('end_date'));
+            $space = Space::where('id', $request->input('service_id'))->first();
 
-            $duration_in_hour = max(1, ceil(($end_date->getTimestamp() - $start_date->getTimestamp()) / HOUR_IN_SECONDS) + 24);
+            //$total = $this->getPriceInRanges($request->input('start_date'), $request->input('end_date'));
+            $totalInfo = CodeHelper::getSpacePrice($space, $start_date->format('Y-m-d H:i:s'), $end_date->format('Y-m-d H:i:s'));
+            $total = $totalInfo['price'];
 
-            if ($this->enable_extra_price and !empty($this->extra_price)) {
-                if (!empty($this->extra_price)) {
-                    foreach ($this->extra_price as $k => $type) {
-                        $type_total = 0;
-                        if (isset($extra_price_input[$k])) {
-                            switch ($type['type']) {
-                                case "one_time":
-                                    $type_total = $type['price'];
-                                    break;
-                                case "per_hour":
-                                    $type_total = $type['price'] * $duration_in_hour;
-                                    break;
-                                case "per_day":
-                                    $type_total = $type['price'] * ceil($duration_in_hour / 24);
-                                    break;
-                            }
-                            if (!empty($type['per_person'])) {
-                                $type_total *= $total_guests;
-                            }
-                            $type['total'] = $type_total;
-                            $total += $type_total;
-                            $extra_price[] = $type;
-                        }
-                    }
-                }
-            }
+            // $duration_in_hour = max(1, ceil(($end_date->getTimestamp() - $start_date->getTimestamp()) / HOUR_IN_SECONDS) + 24);
 
-            //Buyer Fees for Admin
-            $total_before_fees = $total;
-            $total_buyer_fee = 0;
-            if (!empty($list_buyer_fees = setting_item('space_booking_buyer_fees'))) {
-                $list_fees = json_decode($list_buyer_fees, true);
-                $total_buyer_fee = $this->calculateServiceFees($list_fees, $total_before_fees, $total_guests);
-                $total += $total_buyer_fee;
-            }
+            // if ($this->enable_extra_price and !empty($this->extra_price)) {
+            //     if (!empty($this->extra_price)) {
+            //         foreach ($this->extra_price as $k => $type) {
+            //             $type_total = 0;
+            //             if (isset($extra_price_input[$k])) {
+            //                 switch ($type['type']) {
+            //                     case "one_time":
+            //                         $type_total = $type['price'];
+            //                         break;
+            //                     case "per_hour":
+            //                         $type_total = $type['price'] * $duration_in_hour;
+            //                         break;
+            //                     case "per_day":
+            //                         $type_total = $type['price'] * ceil($duration_in_hour / 24);
+            //                         break;
+            //                 }
+            //                 if (!empty($type['per_person'])) {
+            //                     $type_total *= $total_guests;
+            //                 }
+            //                 $type['total'] = $type_total;
+            //                 $total += $type_total;
+            //                 $extra_price[] = $type;
+            //             }
+            //         }
+            //     }
+            // }
 
-            //Service Fees for Vendor
-            $total_service_fee = 0;
-            if (!empty($this->enable_service_fee) and !empty($list_service_fee = $this->service_fee)) {
-                $total_service_fee = $this->calculateServiceFees($list_service_fee, $total_before_fees, $total_guests);
-                $total += $total_service_fee;
-            }
+
+            // // dd($totalInfo);
+
+            // //Buyer Fees for Admin
+            // $total_before_fees = $total;
+            // $total_buyer_fee = 0;
+            // if (!empty($list_buyer_fees = setting_item('space_booking_buyer_fees'))) {
+            //     $list_fees = json_decode($list_buyer_fees, true);
+            //     $total_buyer_fee = $this->calculateServiceFees($list_fees, $total_before_fees, $total_guests);
+            //     $total += $total_buyer_fee;
+            // }
+
+            // //Service Fees for Vendor
+            // $total_service_fee = 0;
+            // if (!empty($this->enable_service_fee) and !empty($list_service_fee = $this->service_fee)) {
+            //     $total_service_fee = $this->calculateServiceFees($list_service_fee, $total_before_fees, $total_guests);
+            //     $total += $total_service_fee;
+            // }
 
             if (empty($start_date) or empty($end_date)) {
                 return $this->sendError(__("Your selected dates are not valid"));
             }
+
             $booking = new $this->bookingClass();
             $booking->status = 'draft';
             $booking->object_id = $request->input('service_id');
             $booking->object_model = $request->input('service_type');
             $booking->vendor_id = $this->create_user;
             $booking->customer_id = Auth::id();
-            $booking->total = $total;
             $booking->total_guests = $total_guests;
             $booking->start_date = $start_date->format('Y-m-d H:i:s');
             $booking->end_date = $end_date->format('Y-m-d H:i:s');
 
-            $booking->vendor_service_fee_amount = $total_service_fee ?? '';
-            $booking->vendor_service_fee = $list_service_fee ?? '';
-            $booking->buyer_fees = $list_buyer_fees ?? '';
-            $booking->total_before_fees = $total_before_fees;
-            $booking->total_before_discount = $total_before_fees;
+            // $booking->vendor_service_fee_amount = $total_service_fee ?? '';
+            // $booking->vendor_service_fee = $list_service_fee ?? '';
+            // $booking->buyer_fees = $list_buyer_fees ?? '';
+            // $booking->total_before_fees = $total_before_fees;
+            // $booking->total_before_discount = $total_before_fees;
 
-            $booking->calculateCommission();
+            // $booking->buyer_fees = json_encode($totalInfo['guestFeeList']);
+            // $booking->buyer_fees_amount = ($totalInfo['guestFee']);
 
-            if ($this->isDepositEnable()) {
-                $booking_deposit_fomular = $this->getDepositFomular();
-                $tmp_price_total = $booking->total;
-                if ($booking_deposit_fomular == "deposit_and_fee") {
-                    $tmp_price_total = $booking->total_before_fees;
-                }
+            // $booking->vendor_service_fee = json_encode($totalInfo['hostFeeList']);
+            // $booking->vendor_service_fee_amount = ($totalInfo['hostFee']);
 
-                switch ($this->getDepositType()) {
-                    case "percent":
-                        $booking->deposit = $tmp_price_total * $this->getDepositAmount() / 100;
-                        break;
-                    default:
-                        $booking->deposit = $this->getDepositAmount();
-                        break;
-                }
-                if ($booking_deposit_fomular == "deposit_and_fee") {
-                    $booking->deposit = $booking->deposit + $total_buyer_fee + $total_service_fee;
-                }
-            }
+            // $booking->total_before_fees = $totalInfo['price'];  
+            // $booking->total_before_tax = $totalInfo['subTotal'];
+            // $booking->total_before_discount = $totalInfo['grandTotal'];
+
+            // $booking->tax = $totalInfo['tax'];
+            // $booking->total = $totalInfo['payableAmount'];
+
+            $booking = CodeHelper::assignSpacePricingToBooking($booking, $totalInfo);
+
+            // $booking->calculateCommission();
+
+            // if ($this->isDepositEnable()) {
+            //     $booking_deposit_fomular = $this->getDepositFomular();
+            //     $tmp_price_total = $booking->total;
+            //     if ($booking_deposit_fomular == "deposit_and_fee") {
+            //         $tmp_price_total = $booking->total_before_fees;
+            //     }
+
+            //     switch ($this->getDepositType()) {
+            //         case "percent":
+            //             $booking->deposit = $tmp_price_total * $this->getDepositAmount() / 100;
+            //             break;
+            //         default:
+            //             $booking->deposit = $this->getDepositAmount();
+            //             break;
+            //     }
+            //     if ($booking_deposit_fomular == "deposit_and_fee") {
+            //         $booking->deposit = $booking->deposit + $total_buyer_fee + $total_service_fee;
+            //     }
+            // }
 
             $check = $booking->save();
             if ($check) {
@@ -386,6 +445,7 @@ class Space extends Bookable
                 $booking->addMeta('extra_price', $extra_price);
                 $booking->addMeta('tmp_dates', $this->tmp_dates);
                 $booking->addMeta('booking_type', $this->getBookingType());
+
                 if ($this->isDepositEnable()) {
                     $booking->addMeta('deposit_info', [
                         'type' => $this->getDepositType(),
@@ -394,12 +454,13 @@ class Space extends Bookable
                     ]);
                 }
 
+                $platform = $request->input('platform');
+
                 return $this->sendSuccess([
-                    'url' => $booking->getCheckoutUrl(),
+                    'url' => $booking->getCheckoutUrl($platform),
                     'booking_code' => $booking->code,
                 ]);
             }
-
         } else {
             return $this->sendError(__("Invalid request, please check if date and time selected properly"));
         }
@@ -461,11 +522,11 @@ class Space extends Bookable
             if ($validator->fails()) {
                 return $this->sendError('', ['errors' => $validator->errors()]);
             }
-
         }
+
         $total_guests = $request->input('adults') + $request->input('children');
         if ($total_guests > $this->max_guests) {
-            return $this->sendError(__("Maximum guests is :count", ['count' => $this->max_guests]));
+            return $this->sendError(__("Maximum guests is :count ", ['count' => $this->max_guests]));
         }
         $start_date = $request->input('start_date');
         $end_date = $request->input('end_date');
@@ -515,8 +576,8 @@ class Space extends Bookable
                 ['target_id', '=', $this->id],
             ])->count('id');
 
-            if ($notAvailableDates) return false;
-
+            if ($notAvailableDates)
+                return false;
         } else {
             $availableDates = $this->spaceDateClass::query()->where([
                 ['start_date', '>=', $start_date],
@@ -525,7 +586,8 @@ class Space extends Bookable
                 ['target_id', '=', $this->id],
             ])->count('id');
 
-            if ($availableDates <= $days) return true;
+            if ($availableDates <= $days)
+                return true;
         }
 
         // Check Order
@@ -599,7 +661,7 @@ class Space extends Bookable
                 }
             }
 
-            $booking_data['extra_price'] = array_values((array)$booking_data['extra_price']);
+            $booking_data['extra_price'] = array_values((array) $booking_data['extra_price']);
         }
 
         $list_fees = setting_item_array('space_booking_buyer_fees');
@@ -783,7 +845,8 @@ class Space extends Bookable
                 $join->on('bravo_locations.id', '=', $this->table . '.location_id')->where('bravo_locations._lft', '>=', $location->_lft)->where('bravo_locations._rgt', '<=', $location->_rgt);
             })->where($this->table . ".status", "publish")->with(['translations'])->count($this->table . ".id");
         }
-        if (empty($number)) return false;
+        if (empty($number))
+            return false;
         if ($number > 1) {
             return __(":number Spaces", ['number' => $number]);
         }
@@ -806,13 +869,13 @@ class Space extends Bookable
         $query->where('object_model', $this->type);
 
         return $query->orderBy('id', 'asc')->get();
-
     }
 
     public function saveCloneByID($clone_id)
     {
         $old = parent::find($clone_id);
-        if (empty($old)) return false;
+        if (empty($old))
+            return false;
         $selected_terms = $old->terms->pluck('term_id');
         $old->title = $old->title . " - Copy";
         $new = $old->replicate();
@@ -1028,6 +1091,7 @@ class Space extends Bookable
 
     public static function search(Request $request)
     {
+        $searchQuery = trim($request->query('q'));
         $search_type = $request->query('search_type');
         $model_space = parent::query()->select("bravo_spaces.*");
         $model_space->where("bravo_spaces.status", "publish");
@@ -1046,15 +1110,52 @@ class Space extends Bookable
         if (!empty($price_range = $request->query('price_range'))) {
             $pri_from = explode(";", $price_range)[0];
             $pri_to = explode(";", $price_range)[1];
-            $raw_sql_min_max = "( (IFNULL(bravo_spaces.sale_price,0) > 0 and bravo_spaces.sale_price >= ? ) OR (IFNULL(bravo_spaces.sale_price,0) <= 0 and bravo_spaces.price >= ? ) )
-                            AND ( (IFNULL(bravo_spaces.sale_price,0) > 0 and bravo_spaces.sale_price <= ? ) OR (IFNULL(bravo_spaces.sale_price,0) <= 0 and bravo_spaces.price <= ? ) )";
-            $model_space->WhereRaw($raw_sql_min_max, [$pri_from, $pri_from, $pri_to, $pri_to]);
+            $raw_sql_min_max = "( 
+                    (IFNULL(bravo_spaces.price,0) > 0 and bravo_spaces.price >= " . $pri_from . " ) OR 
+
+                    (IFNULL(bravo_spaces.sale_price,0) > 0 and bravo_spaces.sale_price >= " . $pri_from . " )  OR
+
+                    (IFNULL(bravo_spaces.hourly,0) > 0 and bravo_spaces.hourly >= " . $pri_from . " )  OR
+                    (IFNULL(bravo_spaces.discounted_hourly,0) > 0 and bravo_spaces.discounted_hourly >= " . $pri_from . " )  OR
+
+                    (IFNULL(bravo_spaces.daily,0) > 0 and bravo_spaces.daily >= " . $pri_from . " )  OR
+                    (IFNULL(bravo_spaces.discounted_daily,0) > 0 and bravo_spaces.discounted_daily >= " . $pri_from . " )  OR
+
+                    (IFNULL(bravo_spaces.weekly,0) > 0 and bravo_spaces.weekly >= " . $pri_from . " )  OR
+                    (IFNULL(bravo_spaces.discounted_weekly,0) > 0 and bravo_spaces.discounted_weekly >= " . $pri_from . " )  OR
+
+                    (IFNULL(bravo_spaces.monthly,0) > 0 and bravo_spaces.monthly >= " . $pri_from . " )  OR
+                    (IFNULL(bravo_spaces.discounted_monthly,0) > 0 and bravo_spaces.discounted_monthly >= " . $pri_from . " )
+                )
+                AND ( 
+                    (IFNULL(bravo_spaces.price,0) > 0 and bravo_spaces.price <= " . $pri_to . " ) OR 
+
+                    (IFNULL(bravo_spaces.sale_price,0) > 0 and bravo_spaces.sale_price <= " . $pri_to . " )  OR
+
+                    (IFNULL(bravo_spaces.hourly,0) > 0 and bravo_spaces.hourly <= " . $pri_to . " )  OR
+                    (IFNULL(bravo_spaces.discounted_hourly,0) > 0 and bravo_spaces.discounted_hourly <= " . $pri_to . " )  OR
+
+                    (IFNULL(bravo_spaces.daily,0) > 0 and bravo_spaces.daily <= " . $pri_to . " )  OR
+                    (IFNULL(bravo_spaces.discounted_daily,0) > 0 and bravo_spaces.discounted_daily <= " . $pri_to . " )  OR
+
+                    (IFNULL(bravo_spaces.weekly,0) > 0 and bravo_spaces.weekly <= " . $pri_to . " )  OR
+                    (IFNULL(bravo_spaces.discounted_weekly,0) > 0 and bravo_spaces.discounted_weekly <= " . $pri_to . " )  OR
+
+                    (IFNULL(bravo_spaces.monthly,0) > 0 and bravo_spaces.monthly <= " . $pri_to . " )  OR
+                    (IFNULL(bravo_spaces.discounted_monthly,0) > 0 and bravo_spaces.discounted_monthly <= " . $pri_to . " )
+                )";
+
+            $model_space->WhereRaw($raw_sql_min_max);
         }
 
         $terms = $request->query('terms');
-//        if ($term_id = $request->query('term_id')) {
-//            $terms[] = $term_id;
-//        }
+        //        if ($term_id = $request->query('term_id')) {
+        //            $terms[] = $term_id;
+        //        }
+
+        if ($searchQuery != null) {
+            $model_space->where('title', 'LIKE', '%' . $searchQuery . '%');
+        }
 
         if (is_array($terms) && !empty($terms)) {
             $terms = Arr::where($terms, function ($value, $key) {
@@ -1062,7 +1163,6 @@ class Space extends Bookable
             });
             if (!empty($terms)) {
                 $model_space->join('bravo_space_term as tt', 'tt.target_id', "bravo_spaces.id")->whereIn('tt.term_id', $terms);
-
             }
         }
 
@@ -1085,7 +1185,6 @@ class Space extends Bookable
                     $join->on('bravo_spaces.id', '=', 'bravo_space_translations.origin_id');
                 });
                 $model_space->where('bravo_space_translations.title', 'LIKE', '%' . $service_name . '%');
-
             } else {
                 $model_space->where('bravo_spaces.title', 'LIKE', '%' . $service_name . '%');
             }
@@ -1093,15 +1192,26 @@ class Space extends Bookable
 
 
         if (!empty($lat = $request->query('map_lat')) and !empty($lgn = $request->query('map_lgn'))) {
-//            ORDER BY (POW((lon-$lon),2) + POW((lat-$lat),2))";
+            //            ORDER BY (POW((lon-$lon),2) + POW((lat-$lat),2))";
 
             if ($lat != null && $lgn != null) {
                 $model_space->whereRaw("(ST_Distance_Sphere(point(`bravo_spaces`.`map_lng`, `bravo_spaces`.`map_lat`), point(" . $lgn . "," . $lat . "))) <= (50 / 0.001)");
             }
 
             $model_space->orderByRaw("POW((bravo_spaces.map_lng-?),2) + POW((bravo_spaces.map_lat-?),2)", [$lgn, $lat]);
-        }
+        } else {
 
+            $userLat = $request->query('userLat');
+            $userLng = $request->query('userLng');
+
+            if (!CodeHelper::isNotEmpty($searchQuery)) {
+                if (CodeHelper::isNotEmpty($userLat) && CodeHelper::isNotEmpty($userLng)) {
+                    $model_space->whereRaw("(ST_Distance_Sphere(point(`bravo_spaces`.`map_lng`, `bravo_spaces`.`map_lat`), point(" . $userLng . "," . $userLat . "))) <= (50 / 0.001)");
+                    $model_space->orderByRaw("POW((bravo_spaces.map_lng-?),2) + POW((bravo_spaces.map_lat-?),2)", [$userLng, $userLat]);
+                }
+            }
+
+        }
 
         $orderby = $request->input("orderby");
         switch ($orderby) {
@@ -1112,6 +1222,15 @@ class Space extends Bookable
                 break;
             case "best_rated":
                 $model_space->where("review_score", '>', 4)->orderBy("review_score", "desc");
+                break;
+            case "on-sale":
+                $model_space->where(function ($query) {
+                    $query->where("discounted_hourly", '<', 'hourly')
+                        ->orWhere("discounted_daily", '<', 'daily')
+                        ->orWhere("discounted_weekly", '<', 'weekly')
+                        ->orWhere("discounted_monthly", '<', 'monthly')
+                        ->orWhere("sale_price", '<', 'price');
+                });
                 break;
             case "price_high_low":
                 $raw_sql = "CASE WHEN IFNULL( bravo_spaces.sale_price, 0 ) > 0 THEN bravo_spaces.sale_price ELSE bravo_spaces.price END AS tmp_min_price";
@@ -1128,7 +1247,7 @@ class Space extends Bookable
 
         $model_space->groupBy("bravo_spaces.id");
 
-        $max_guests = (int)($request->query('adults') + $request->query('children'));
+        $max_guests = (int) ($request->query('adults') + $request->query('children'));
         if ($max_guests) {
             $model_space->where('max_guests', '>=', $max_guests);
         }
@@ -1144,7 +1263,8 @@ class Space extends Bookable
 
         if ($search_type == 2) {
             $startHour = "12:00";
-            $endHour = "12:00";;
+            $endHour = "12:00";
+            ;
         } else {
             $startHour = isset($_GET['from_hour']) ? trim($_GET['from_hour']) : null;
             $endHour = isset($_GET['to_hour']) ? trim($_GET['to_hour']) : null;
@@ -1197,6 +1317,12 @@ class Space extends Bookable
             $model_space->where('rapidbook', 1);
         }
 
+        if (!empty($request->query('top_rated'))) {
+            //top rates
+            $model_space->where('review_score', '>=', Constants::TOP_RATED_AVERAGE_RATING);
+            $model_space->where('total_bookings', '>=', Constants::TOP_RATED_TOTAL_BOOKINGS);
+        }
+
         if (!empty($request->query('accessibility'))) {
             $id = (Terms::where('slug', 'accessibility')->first()->id) ?? '';
             $model_space->leftJoin('bravo_space_term', function ($join) {
@@ -1241,14 +1367,14 @@ class Space extends Bookable
             $model_space->whereNotIn('bravo_spaces.id', $space_ids);
         }
 
-         $longTermRental = isset($_GET['long_term_rental']) ? trim($_GET['long_term_rental']) : null;
-         if ($longTermRental !== null) {
-             if ($longTermRental == 1) {
-                 $model_space->whereRaw('`bravo_spaces`.`long_term_rental` = 1');
-             } else {
-                 $model_space->whereRaw('`bravo_spaces`.`long_term_rental` = 0');
-             }
-         }
+        $longTermRental = isset($_GET['long_term_rental']) ? trim($_GET['long_term_rental']) : null;
+        if ($longTermRental !== null) {
+            if ($longTermRental == 1) {
+                $model_space->whereRaw('`bravo_spaces`.`long_term_rental` = 1');
+            } else {
+                //$model_space->whereRaw('`bravo_spaces`.`long_term_rental` = 0');
+            }
+        }
 
         $have = isset($_GET['have']) ? trim($_GET['have']) : null;
         if ($have !== null) {
@@ -1264,9 +1390,9 @@ class Space extends Bookable
             }
         }
 
-        /*echo $model_space->toSql()."</br>";
-        print_r($model_space->getBindings());
-        die;*/
+        // echo $model_space->toSql()."</br>";
+        // print_r($model_space->getBindings());
+        // die;
 
         return $model_space->with(['location', 'hasWishList', 'translations'])->paginate($limit);
     }
@@ -1292,8 +1418,8 @@ class Space extends Bookable
             if (!empty($location_id = $this->location_id)) {
                 $related = parent::query()->where('location_id', $location_id)->where("status", "publish")->take(4)->whereNotIn('id', [$this->id])->with(['location', 'translations', 'hasWishList'])->get();
                 $data['related'] = $related->map(function ($related) {
-                        return $related->dataForApi();
-                    }) ?? null;
+                    return $related->dataForApi();
+                }) ?? null;
             }
             $data['terms'] = Terms::getTermsByIdForAPI($this->terms->pluck('term_id'));
         } else {
@@ -1379,33 +1505,214 @@ class Space extends Bookable
         return $user;
     }
 
-    public function getDefaultPrice($id){
+    public function getDefaultPrice($id)
+    {
         $space = Space::where('id', $id)->first();
-        $price= ($space->price)?$space->price:'';
-        $discountPrice=($space->sale_price)?$space->sale_price:'';
-        if($space->hourly_price_set_default)
-        {
-            $price= $space->hourly;
-            $discountPrice=$space->hourly-($space->hourly*($space->discount/100));
+        $price = ($space->price) ? $space->price : '';
+        $discountPrice = ($space->sale_price) ? $space->sale_price : '';
+        if ($space->hourly_price_set_default) {
+            $price = $space->hourly;
+            $discountPrice = $space->hourly - ($space->hourly * ($space->discount / 100));
         }
-        if($space->daily_price_set_default)
-        {
-            $price= $space->daily;
-            $discountPrice=$space->daily-($space->daily*($space->discount/100));
+        if ($space->daily_price_set_default) {
+            $price = $space->daily;
+            $discountPrice = $space->daily - ($space->daily * ($space->discount / 100));
         }
-        if($space->weekly_price_set_default)
-        {
-            $price= $space->weekly;
-            $discountPrice=$space->weekly-($space->weekly*($space->discount/100));
+        if ($space->weekly_price_set_default) {
+            $price = $space->weekly;
+            $discountPrice = $space->weekly - ($space->weekly * ($space->discount / 100));
         }
-        if($space->monthly_price_set_default)
-        {
-            $price= $space->monthly;
-            $discountPrice=$space->monthly-($space->monthly*($space->discount/100));
+        if ($space->monthly_price_set_default) {
+            $price = $space->monthly;
+            $discountPrice = $space->monthly - ($space->monthly * ($space->discount / 100));
         }
 
-        
 
-       return ['price'=>$price,'discountPrice'=>$discountPrice];
+
+        return ['price' => $price, 'discountPrice' => $discountPrice];
     }
+
+
+    public function lastBooking()
+    {
+        return Booking::where([
+            'object_id' => $this->id,
+            'object_model' => 'space'
+        ])->where('status', '!=', Constants::BOOKING_STATUS_DRAFT)->orderBy('id', 'DESC')->first();
+    }
+
+    public function totalBookings()
+    {
+        $totalBookings = Booking::where([
+            'object_id' => $this->id,
+            'object_model' => 'space'
+        ])->where('status', '!=', Constants::BOOKING_STATUS_DRAFT)->count();
+        if ($totalBookings == null) {
+            $totalBookings = 0;
+        }
+        return $totalBookings;
+    }
+
+    public function totalEarnings()
+    {
+        $totalBookings = Booking::where([
+            'object_id' => $this->id,
+            'object_model' => 'space'
+        ])->where('status', '!=', Constants::BOOKING_STATUS_DRAFT)->sum('host_amount');
+        if ($totalBookings == null) {
+            $totalBookings = 0;
+        }
+        return $totalBookings;
+    }
+
+
+    public function isfavourite()
+    {
+        $user_id = Auth::id();
+        // return $this->id;
+        if ($user_id) {
+            $data = AddToFavourite::where('user_id', $user_id)->where('object_id', $this->id)->first();
+            if ($data) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    public function isTopRated()
+    {
+        if ($this->total_bookings >= Constants::TOP_RATED_TOTAL_BOOKINGS) {
+            $reviewScore = $this->review_score;
+            if ($reviewScore == null) {
+                $reviewScore = 0;
+            }
+            if ($reviewScore >= Constants::TOP_RATED_AVERAGE_RATING) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function updateStats()
+    {
+        $totalBookings = Booking::where('object_id', $this->id)
+            ->where('object_model', 'space')->whereNotIn('status', [
+                    Constants::BOOKING_STATUS_DRAFT,
+                    Constants::BOOKING_STATUS_FAILED
+                ])->count();
+        if ($totalBookings == null) {
+            $totalBookings = 0;
+        }
+        $this->total_bookings = $totalBookings;
+        $this->save();
+    }
+
+
+    public function calculateDistance()
+    {
+        // $unit = K/N/M   
+        $lat1 = $lon1 = $lat2 = $lon2 = "";
+        try {
+            $lat1 = $this->map_lat;
+            $lon1 = $this->map_lng;
+            if ($lat1 != null && $lon1 != null) {
+                $lat1 = $lat1 * 1;
+                $lon1 = $lon1 * 1;
+                if (Session::has('lat') && Session::has('lng')) {
+
+                    $lat2 = Session::get('lat');
+                    $lon2 = Session::get('lng');
+
+                    // dd([
+                    //     'lat1' => $lat1,
+                    //     'lon1' => $lon1,
+                    //     'lat2' => $lat2,
+                    //     'lon2' => $lon2,
+                    // ]);
+
+                    if (is_array($lat2) && count($lat2) > 0) {
+                        $lat2 = $lat2[0];
+                    }
+
+                    if (is_array($lon2) && count($lon2) > 0) {
+                        $lon2 = $lon2[0];
+                    }
+
+                    if ($lat2 != null && $lon2 != null) {
+                        $lat2 = $lat2 * 1;
+                        $lon2 = $lon2 * 1;
+                        if (($lat1 == $lat2) && ($lon1 == $lon2)) {
+                            return 0;
+                        } else {
+
+                            $distance = CodeHelper::haversineGreatCircleDistance(
+                                $lat1,
+                                $lon1,
+                                $lat2,
+                                $lon2
+                            );
+
+                            return $distance;
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $ex) {
+        }
+        return null;
+    }
+
+    public function addressWithDistance($showWithAddress = true, $explodedCity = false)
+    {
+        $mapLink = 'https://www.google.com/maps/search/?api=1&query=' . trim(urlencode($this->address));
+        if (Session::has('lat') && Session::has('lng')) {
+            $lat = Session::get('lat');
+            $lon = Session::get('lng');
+            $mapLink = 'https://www.google.com/maps/dir/?api=1&origin=' . $lat . ',' . $lon . '&destination=' . trim(urlencode($this->address));
+        }
+        $distance = $this->calculateDistance();
+        if ($distance > 0) {
+            if ($distance > 100) {
+                $distance = "100+";
+            } else {
+                $distance = round($distance, 2);
+            }
+        }
+
+        $addressD = $this->address;
+
+        if ($explodedCity) {
+            $explodedCityData = explode(',', $addressD);
+            if (count($explodedCityData) == 4) {
+                $explodedCityData2 = $explodedCityData;
+                unset($explodedCityData2[0]);
+                $addressD = $explodedCityData[0] . ",</br>" . trim(implode(',', $explodedCityData2));
+            }
+        }
+
+        $title = $addressD;
+
+        if ($distance != null) {
+            if ($showWithAddress) {
+                $title = $distance . "km </br>" . $addressD;
+            } else {
+                $title = $distance . "km";
+            }
+            // $title = $distance . "km, " . $addressD;
+        }
+        return [
+            'title' => $title,
+            'address' => $this->address,
+            'link' => $mapLink
+        ];
+    }
+
+    public function mapViewImage()
+    {
+        return "https://maps.google.com/maps/api/staticmap?center=25.3176452,82.97391440000001,&zoom=15&markers=icon:https://i.imgur.com/x1z7C2s.png|" . $this->map_lat . "," . $this->map_lng . "&path=color:0x0000FF80|weight:5|" . $this->map_lat . "," . $this->map_lng . "&size=100x100&key=AIzaSyCRu_qlT0HNjPcs45NXXiOSMd3btAUduSc";
+    }
+
 }

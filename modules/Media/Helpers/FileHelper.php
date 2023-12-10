@@ -229,7 +229,7 @@ class FileHelper
         ob_start();
         ?>
         <div class="dungdt-upload-multiple <?php if (!empty($file)) echo 'active' ?>" data-val="<?php echo $oldValue ?>">
-            <div class="attach-demo d-flex">
+            <div class="attach-demo d-flex" id="sortableItems">
                 <?php
                 foreach ($oldIds as $id) {
                     $file = (new MediaFile())->findById($id);
@@ -244,7 +244,7 @@ class FileHelper
                                 <a class="edit-img btn btn-sm btn-primary edit-multiple" data-id="<?php echo $id ?>"  data-file="<?php echo $oldPath ?>"><i class="fa fa-edit"></i></a>
                                 <span class="delete btn btn-sm btn-danger"><i class="fa fa-trash"></i></span><img src="<?php echo FileHelper::url($file, 'thumb').'?time='.strtotime('now') ?>" class="image-responsive image-preview">
                             </div>
-                        </div>
+                        </div> 
                         <?php
                     }
                 }

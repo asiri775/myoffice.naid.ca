@@ -97,7 +97,6 @@
             if (typeof rd == "function") {
                 rd(me);
             }
-
         });
 
     };

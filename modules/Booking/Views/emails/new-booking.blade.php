@@ -4,8 +4,6 @@ $translation = $service->translateOrOrigin(app()->getLocale());
 $lang_local = app()->getLocale();
 $booking_number=$booking->id;
 $booking_status=$booking->statusName;
-$address="";
-$payment_method="";
 if($booking->gatewayObj)
 {
 $payment_method=$booking->gatewayObj->getOption('name');
@@ -20,18 +18,12 @@ if($translation->address)
 {
 $address=$translation->address;
 }
-$display_start_date="";
-$display_end_date="";
-$booking_type_days="";
-$duration_days="":
-$adults_text="";
-$children_text="";
-$extra="";
+
 if($booking->start_date && $booking->end_date)
 {
     $display_start_date= display_date($booking->end_date);
     $display_end_date= display_date($booking->end_date);
-  
+    $booking_type_days='';
     if($booking->getMeta("booking_type") == "by_day")
     {
     $duration_days=$booking->duration_days;
@@ -51,7 +43,7 @@ if($booking->start_date && $booking->end_date)
     }
 }
 
-
+$adults_text='';
 if($meta = $booking->getMeta('adults'))
 {
    $adults=$booking->getMeta('adults');
@@ -60,7 +52,7 @@ if($meta = $booking->getMeta('adults'))
             <td style="padding: 10px;text-align: right;font-weight: 500;border-bottom: 1px solid #EAEEF3;"><strong>'.$adults.'</strong></td>
         </tr>';
 }
-
+$children_text='';
 if($meta = $booking->getMeta('children'))
 {
    $children=$booking->getMeta('children');
@@ -72,7 +64,7 @@ if($meta = $booking->getMeta('children'))
 $price_item = $booking->total_before_extra_price;
 $rental_price=format_money($price_item);
 $extra_price = $booking->getJsonMeta('extra_price');
-
+$extra='';
 if(!empty($extra_price)){
  foreach($extra_price as $type)
        {
@@ -85,6 +77,11 @@ if(!empty($extra_price)){
 
 $total= format_money($booking->total);
 $paid= format_money($booking->paid);
+$remain = 0;
+if($booking->total > $booking->paid)
+{
+    $remain=format_money($booking->total - $booking->paid);
+}
 $booking_history_url=route("user.bookings.details");
 
 $list_all_fee = [];
@@ -161,7 +158,7 @@ $customer_info= <<<HEREDOC
         $duration_nights
         $adults_text
         $children_text
-        <tr>
+        <tr style="display:none;">
             <td style="padding: 10px; font-weight: 500;border-bottom: 1px solid #EAEEF3;">Pricing</td>
             <td style="padding: 10px;text-align: right;font-weight: 500;border-bottom: 1px solid #EAEEF3;">
                 <table style="text-align: left;
@@ -193,6 +190,10 @@ $customer_info= <<<HEREDOC
         <tr>
             <td style="font-weight: 500;border-bottom: 1px solid #EAEEF3; padding: 10px;font-size: 21px;">Paid</td>
             <td style="text-align: right;border-bottom: 1px solid #EAEEF3;padding: 10px;font-size: 21px;"><strong style="color: #FA5636">$paid</strong></td>
+        </tr>
+        <tr>
+            <td style="font-weight: 500;border-bottom: 1px solid #EAEEF3; padding: 10px;font-size: 21px;">Remain</td>
+            <td style="text-align: right;border-bottom: 1px solid #EAEEF3;padding: 10px;font-size: 21px;"><strong style="color: #FA5636">$remain</strong></td>
         </tr>
     </table>
 </div>
@@ -279,7 +280,7 @@ foreach ($variableArray as $key => $value) {
     $templateHTML = str_replace("{".$key."}", $value, $templateHTML);
 }
 
-@endphp 
+@endphp
 
 {!! $templateHTML !!}
 

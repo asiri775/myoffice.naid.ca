@@ -318,7 +318,7 @@
             <div class="loginrow orPlx fulwidthm left josfinsanregular fontsize16 graytext mgnB15 text-center">
                 <span>or</span>
             </div>
-            <div class="fontsize12 graytext text-center mb-3">Login Through</div>
+            <div class="fontsize12 graytext text-center mb-3">Continue With</div>
             <div id="wrapper" style="text-align: center;">
                 <div style="display: inline-block; vertical-align: top;">
                     <a href="{{ route('social.login', 'facebook') }}">

@@ -4,6 +4,8 @@
     <input type="hidden" name="booking_type" value="{{Request::query('booking_type')}}">
     <input type="hidden" name="long_term_rental" value="{{Request::query('long_term_rental')}}">
     <input type="hidden" name="search_type" value="{{Request::query('search_type')}}">
+    <input type="hidden" name="map_lat" value="{{Request::query('map_lat')}}">
+    <input type="hidden" name="map_lgn" value="{{Request::query('map_lgn')}}">
 
     @include('Space::frontend.layouts.search-map.fields.location')
     @include('Space::frontend.layouts.search-map.fields.date')

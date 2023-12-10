@@ -122,7 +122,7 @@
                 <div class="review-pag-text">{{__("No Review")}}</div>
             @endif
         </div>
-        @if($row->check_enable_review_after_booking() and Auth::id())
+        {{-- @if($row->check_enable_review_after_booking() and Auth::id())
             <div class="review-form">
                 <div class="title-form">
                     {{__("Write a review")}}
@@ -217,6 +217,6 @@
             <div class="review-message">
                 {!!  __("You must <a href='/login' data-toggle='modal' data-target='/login'>log in</a> to write review") !!}
             </div>
-        @endif
+        @endif --}}
     </div>
 @endif

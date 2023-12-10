@@ -67,11 +67,11 @@ body.frontend-page.header-normal.has-search-map>.container-fluid footer {
 .themeForm .form-group.password .input-icon {
     right: 0px !important;
 }
- 
+
 .themeForm .togglePassField {
-    top: 44px; 
+    top: 44px;
 }
-  
+
 .themeForm .form-group.password .input-icon {
     top: 0 !important;
 }
@@ -142,4 +142,447 @@ th.datepicker-switch,
     margin-bottom: 25px;
 }
 
-@media only screen and (max-width: 767px) {}
+.contactPageData h1 {
+    font-size: 30px;
+    margin-bottom: 0;
+}
+
+.contactPageData h2 {
+    font-size: 16px;
+}
+
+.contactPageImage .contact-info {
+    background: transparent;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: end;
+    height: 100%;
+    width: 100%;
+}
+
+.contactPageImage .contact-info img {
+    height: 420px;
+    width: auto;
+    margin: 0 auto;
+    display: block;
+}
+
+.contactArea {
+    padding: 25px 0;
+}
+
+.pro-div h2 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    line-height: initial;
+}
+
+.bravo_wrap .bravo_search_space .bravo-list-item .list-item .item-loop {
+    height: calc(100% - 20px);
+}
+
+.bravo_wrap .bravo_detail_hotel .bravo_content .g-header .review-score .head .score {
+    font-size: 23px !important;
+    font-weight: 600;
+    width: 60px !important;
+    height: 55px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 15px;
+}
+
+.bravo_wrap .bravo_detail_hotel .bravo_content .g-header .review-score .head .left .text-rating {
+    font-size: 11px;
+    margin-top: -2px;
+    display: block;
+    font-weight: 500;
+}
+
+/* .gLangHide {
+    display: none;
+}
+
+.gLangHide[data-lang=""] {
+    display: block;
+}
+
+.gLangHide[data-lang=""] .title-lang {
+    display: none;
+} */
+
+.g-lang .title-lang {
+    display: none;
+}
+
+.specialPriceBadge {
+    position: absolute;
+    z-index: 1;
+    left: 15px;
+    top: 15px;
+    background: #FFC107;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50px;
+    font-size: 11px;
+}
+
+.bravo_wrap .bravo_search_space .bravo-list-item .list-item .item-loop {
+    display: flex;
+    flex-direction: column;
+}
+
+.bravo_wrap .bravo_search_space .bravo-list-item .list-item .item-loop .amenities {
+    margin-top: auto;
+    margin-bottom: 0;
+}
+
+.bravo-list-item.not-found {
+    flex-direction: column;
+    display: block !important;
+    justify-content: flex-start !important;
+    align-items: unset !important;
+}
+
+.header-menu-web {
+    display: flex;
+    align-items: center;
+}
+
+#topHeadSearch {
+    margin-left: 35px;
+}
+
+.header-menu-web .menu {
+    margin-right: 0;
+    margin-left: auto;
+}
+
+#topHeadSearchInput {
+    background: transparent;
+    color: #fff;
+    border-color: #333;
+    min-width: 300px;
+    padding-right: 30px;
+}
+
+#topHeadSearchInput:hover,
+#topHeadSearchInput:focus {
+    box-shadow: none;
+    background: transparent;
+    color: #fff;
+    border-color: #333;
+}
+
+#topHeadSearch form {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+#topHeadSearch form a {
+    position: absolute;
+    right: 15px;
+    color: #fff;
+    opacity: 0.7;
+}
+
+#topHeadSearch form a:hover {
+    opacity: 1;
+}
+
+.location-header {
+    height: 100%;
+    margin-bottom: 0;
+}
+
+.dropdown.loged ul {
+    transform: unset !important;
+    right: -10px !important;
+    left: auto !important;
+    top: 62px !important;
+}
+
+.mt-50 {
+    margin-top: 50px;
+}
+
+.mt-100 {
+    margin-top: 100px;
+}
+
+.theme-card .card-header {
+    background: transparent;
+    border: beige;
+    text-align: center;
+    font-size: 25px;
+    margin-top: 14px;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.theme-card .card-body {
+    text-align: center;
+    margin-top: -15px !important;
+}
+
+table.booking-table-listing td hr {
+    margin: 0;
+}
+
+.iti {
+    display: block;
+    width: 100%;
+}
+
+span.topRatedBagde img {
+    height: 40px;
+    width: 35px;
+    max-width: 35px;
+    min-width: 35px;
+}
+
+span.topRatedBagde {
+    position: absolute;
+    right: 15px;
+    bottom: 15px;
+    z-index: 99999;
+    height: 35px;
+    width: 35px;
+}
+
+.page-cms-content.how-it-works-hosts {
+    text-align: center;
+}
+
+.page-cms-content.how-it-works-hosts .main-title {
+    display: none;
+}
+
+.how-it-works-design-cms h3 {
+    font-size: 36px;
+    color: #000000;
+    font-weight: 600;
+    margin: 15px 0 30px;
+    display: block;
+    text-align: left;
+    font-size: 36px;
+    color: #000000;
+    font-weight: 600;
+    font-family: 'Roboto', sans-serif;
+    text-transform: uppercase;
+}
+
+.how-it-works-design-cms h5 {
+    font-size: 14px;
+    font-weight: normal;
+    margin: 15px 0;
+    display: block;
+    text-align: left;
+    font-family: 'Work Sans', sans-serif;
+}
+
+.how-it-works-design-cms .boxes {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 50px;
+}
+
+.how-it-works-design-cms .box {
+    flex: 0 0 50%;
+    height: 100%;
+    padding-left: 50px;
+    padding-bottom: 30px;
+    text-align: left;
+    position: relative;
+}
+
+.how-it-works-design-cms .box p:first-child {
+    position: absolute;
+    left: 0;
+    top: 2px;
+}
+
+.how-it-works-design-cms .box p:first-child * {
+    font-size: 30px;
+}
+
+.how-it-works-design-cms .box p:not(:first-child):not(:last-child) {
+    font-size: 20px;
+    margin-bottom: 12px;
+    font-weight: 600;
+    font-family: "Roboto";
+}
+
+.how-it-works-design-cms .box p:last-child {
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.listing-item-box-host-popup {
+    text-align: center;
+    z-index: 99999;
+}
+
+.listing-item-box-host-popup .author .author-meta {
+    width: 100%;
+    display: block;
+}
+
+.listing-item-box-host-popup .author {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.listing-item-box-host-popup .author img {
+    height: 60px;
+    width: auto;
+}
+
+.listing-item-box-host-popup .author .author-meta h4 {
+    font-size: 16px;
+    margin: 10px 0 5px;
+    display: block;
+}
+
+.listing-item-box-host-popup .author .author-meta h5 {
+    margin: 10px 0 10px;
+}
+
+.listing-item-box-host-popup .author img {
+    height: 60px;
+    width: auto;
+    margin-bottom: 14px;
+}
+
+.listing-item-box-host-popup .author .author-meta p:last-child {
+    font-size: 12px !important;
+    color: #FFC106 !important;
+}
+
+.listing-item-box-host-popup .author .author-meta p:last-child a {
+    font-size: 12px !important;
+    color: #FFC106 !important;
+}
+
+.frontend-page .modal.login .modal-content .modal-body .form-submit {
+    color: #000 !important;
+}
+
+.space-list-item-details .location {
+    padding: 0 10px !important;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    margin: 0;
+}
+
+.space-list-item-details .item-title a {
+    margin: 5px 0;
+    display: block;
+    height: 18px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.space-list-item-details .price-tab {
+    height: 85px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: column;
+}
+
+.space-list-item-details .content-item-data {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: column;
+    width: 100%;
+}
+
+.space-list-item-details .content-item-data .item-title,
+.space-list-item-details .content-item-data .location {
+    width: 100%;
+}
+
+.space-list-item-details .location-header {
+    display: block;
+}
+
+.main-title{
+    padding-left: 25px !important;   
+}
+
+.bravo_wrap .bravo_search_space .bravo-list-item .list-item .item-loop .item-title a {
+    text-transform: uppercase;
+    font-size: 14px;
+}     
+
+.price-tab .nav>li>a {
+    padding: 10px 5px !important;
+    font-size: 9px !important;
+}
+
+.item-loop .featured-off {
+    background: #FE1392;
+    left: -30px;
+    right: auto;
+    transform: rotate(-45deg);
+    padding-inline: 30px;
+    top: 10px;
+}
+
+.pro-card div.right {
+    left: -70px;
+    right: auto;
+    transform: rotate(-45deg);
+}
+
+.pro-card .arrow {
+    background: #FE1392;
+}
+
+@media only screen and (max-width: 767px) {
+    .how-it-works-design-cms .box {
+        flex: 0 0 100%;
+    }
+
+    .bravo_wrap .bravo_detail_hotel .bravo_content .g-header .right {
+        display: block;
+    }
+
+    .bravo_wrap .bravo_detail_hotel .bravo_content .g-header {
+        overflow: hidden;
+    }
+
+    .bravo_wrap .bravo_detail_hotel .bravo_content .g-header .left {
+        display: block;
+        flex: 0 0 100%;
+        float: unset;
+    }
+
+    .bravo_wrap .bravo_detail_hotel .bravo_content .g-header .review-score .head .score {
+        min-width: 60px !important;
+        min-height: 55px !important;
+    }
+
+    #topHeadSearch {
+        display: none;
+    }
+
+    .header-menu-web {
+        display: block;
+    }
+}

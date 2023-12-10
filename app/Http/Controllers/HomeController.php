@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\User;
+use Exception;
+use Illuminate\Support\Facades\Validator;
+use Modules\Contact\Emails\NotificationToHost;
 use Modules\Hotel\Models\Hotel;
 use Modules\Location\Models\LocationCategory;
 use Modules\Page\Models\Page;
@@ -11,6 +14,11 @@ use Modules\News\Models\Tag;
 use Modules\News\Models\News;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Modules\Contact\Models\Contact;
+use Illuminate\Support\Facades\Mail;
+use Modules\Contact\Emails\NotificationToAdmin;
+use Modules\Space\Models\Space;
 
 class HomeController extends Controller
 {
@@ -21,7 +29,6 @@ class HomeController extends Controller
      */
     public function __construct()
     {
-
     }
 
     /**
@@ -124,4 +131,97 @@ class HomeController extends Controller
     {
         return view('errors.payment_error');
     }
+
+    public function contactSubmit(Request $request)
+    {
+        $row = new Contact($request->input());
+        $row->message = $request->input('notes');
+        $row->status = 'sent';
+        if ($row->save()) {
+            $this->sendEmail($row);
+            return redirect()->back()->with('success', 'Contact request has been sent');
+        } else {
+            die("not saved");
+        }
+    }
+
+    public function contactHost(Request $request)
+    {
+        $rules = [
+            'name' => [
+                'required',
+                'string',
+                'max:255'
+            ],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255'
+            ],
+            'phone' => [
+                'required',
+                'string',
+                'max:255'
+            ],
+            'message' => [
+                'required',
+                'string'
+            ],
+            'space' => ['required'],
+        ];
+        $messages = [
+            'name.required' => __('Name is required field'),
+            'phone.required' => __('Phone is required field'),
+            'message.required' => __('Message is required field'),
+            'email.required' => __('Email is required field'),
+            'space.required' => __('Space is required field'),
+            'email.email' => __('Email invalidate'),
+        ];
+        $validator = Validator::make($request->all(), $rules, $messages);
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors());
+        } else {
+            $name = $request->get('name');
+            $phone = $request->get('phone');
+            $email = $request->get('email');
+            $message = $request->get('message');
+            $space = $request->get('space');
+
+            $space = Space::where('id', $space)->first();
+            $user = User::where('id', $space->create_user)->first();
+
+            try {
+                // $user->email = "kasyap459@gmail.com";
+                Mail::to($user->email)->send(new NotificationToHost($name, $email, $phone, $message, $space));
+            } catch (Exception $exception) {
+                dd($exception);
+                Log::warning("Contact Send Mail: " . $exception->getMessage());
+            }
+
+            return $this->sendSuccess(__('Contact request sent successfully'));
+        }
+    }
+
+    protected function sendEmail($contact)
+    {
+        if ($admin_email = setting_item('admin_email')) {
+            try {
+                Mail::to($admin_email)->send(new NotificationToAdmin($contact));
+            } catch (Exception $exception) {
+                Log::warning("Contact Send Mail: " . $exception->getMessage());
+            }
+        }
+    }
+
+    public function howWorksHost()
+    {
+        return view('site.how-works-host');
+    }
+
+    public function makeItCount()
+    {
+        return view('site.make-count');
+    }
+
 }

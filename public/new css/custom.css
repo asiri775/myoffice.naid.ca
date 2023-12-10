@@ -298,6 +298,10 @@ transform: rotate(45deg);
     background: #000000;
     color: #FFAD00 !important;
 }
+
+.shere-btn-1:hover a, .shere-btn-2:hover a{
+    color: #FFAD00 !important;
+}     
 .shere-btn-2 {
     width: 100%;
     background: #FFAD00;

@@ -1,8 +1,14 @@
 @php
     $translation = $row->translateOrOrigin(app()->getLocale());
+    $spacePriceData = \App\Helpers\CodeHelper::spacePriceData($row);
 @endphp
 
-<div class="item-loop ">
+<div class="item-loop space-list-item-details">
+    @if (count($spacePriceData['prices']) >= 2)
+        {{-- <span class="specialPriceBadge">
+            <i class="fa fa-dollar"></i>
+        </span> --}}
+    @endif
     <div class="thumb-image">
         <a @if (!empty($blank)) target="_blank" @endif
             href="{{ $row->getDetailUrl($include_param ?? true) }}">
@@ -20,113 +26,58 @@
                 <img src="userdata/Profile/20/images.png" alt="Heather Larkin" title="Heather Larkin">
             </a>
         </div>
-        @if ($row->discount)
+        @if (\App\Helpers\CodeHelper::checkIfNumValNotNull($spacePriceData['discountRate']))
             <div class="featured-off">
-                {{ $row->discount }}% OFF
+                {{ $spacePriceData['discountRate'] }}% OFF
             </div>
         @endif
-    </div>  
+        @if ($row->isTopRated())
+            <span class="topRatedBagde">
+                <img src="{{ asset('images/mo_toprated.png') }}" alt="Top Rated">
+            </span>
+        @endif
+    </div>
     <div class="row location-header">
 
-        @if ($row->price and $row->daily == '')
-            <div class="price-tab w-100">
-                <div class="tab-content">
-                    <div class="tab-pane active" id="25price-tab-{{ $row->id }}">
-                        @php
-                            $priceDetails = $row->getDefaultPrice($row->id);
-                        @endphp
-                        <span
-                            class="onsale">{{ $priceDetails['discountPrice'] != '0.00' ? "$" . $priceDetails['discountPrice'] : '' }}</span>
-                        <span
-                            class="text-price">{{ $priceDetails['price'] != '0.00' ? "$" . $priceDetails['price'] : '' }}</span>
-                    </div>
-                </div>
-                <ul class="nav nav-tabs justify-content-center">
-                    <li class="active"><a href="#25price-tab-{{ $row->id }}" data-toggle="tab">Hourly</a></li>
-                </ul>
-            </div>
-        @else
-            <div class="price-tab tab-content-wrapper">
-                <div class="tab-content">
-                    @if ($row->hourly)
-                        <div class="tab-pane active" id="1price-tab-{{ $row->id }}"
-                            aria-labelledby="1price-tab-{{ $row->id }}-tab">
-                            @if ($row->discount)
-                                @php
-                                    $hourly_discounted = number_format((float) $row->hourly * (1 - $row->discount / 100), 2, '.', '');
-                                @endphp
-                                <span class="onsale">${{ $row->hourly }}</span>
-                                <span class="text-price">${{ $hourly_discounted }}</span>
-                            @else
-                                <span class="text-price">${{ $row->hourly }}</span>
-                            @endif
-                        </div>
-                    @endif
-                    @if ($row->daily)
-                        <div class="tab-pane" id="2price-tab-{{ $row->id }}"
-                            aria-labelledby="2price-tab-{{ $row->id }}-tab">
-                            @if ($row->discount)
-                                @php
-                                    $daily_discounted = number_format((float) $row->daily * (1 - $row->discount / 100), 2, '.', '');
-                                @endphp
-                                <span class="onsale">${{ $row->daily }}</span>
-                                <span class="text-price">${{ $daily_discounted }}</span>
-                            @else
-                                <span class="text-price">${{ $row->daily }}</span>
-                            @endif
-                        </div>
-                    @endif
-                    @if ($row->weekly)
-                        <div class="tab-pane" id="3price-tab-{{ $row->id }}"
-                            aria-labelledby="3price-tab-{{ $row->id }}-tab">
-                            @if ($row->discount)
-                                @php
-                                    $weekly_discounted = number_format((float) $row->weekly * (1 - $row->discount / 100), 2, '.', '');
-                                @endphp
-                                <span class="onsale">${{ $row->weekly }}</span>
-                                <span class="text-price">${{ $weekly_discounted }}</span>
-                            @else
-                                <span class="text-price">${{ $row->weekly }}</span>
-                            @endif
-                        </div>
-                    @endif
-                    @if ($row->monthly)
-                        <div class="tab-pane" id="4price-tab-{{ $row->id }}"
-                            aria-labelledby="4price-tab-{{ $row->id }}-tab">
-                            @if ($row->discount)
-                                @php
-                                    $monthly_discounted = number_format((float) $row->monthly * (1 - $row->discount / 100), 2, '.', '');
-                                @endphp
-                                <span class="onsale">${{ $row->monthly }}</span>
-                                <span class="text-price">${{ $monthly_discounted }}</span>
-                            @else
-                                <span class="text-price">${{ $row->monthly }}</span>
-                            @endif
-                        </div>
-                    @endif
-                </div>
-                <ul class="nav nav-tabs" role="tablist">
-                    @if ($row->hourly)
-                        <li class="active"><a href="#1price-tab-{{ $row->id }}"
-                                id="1price-tab-{{ $row->id }}-tab" data-toggle="tab">Hourly</a></li>
-                    @endif
-                    @if ($row->daily)
-                        <li><a href="#2price-tab-{{ $row->id }}" id="2price-tab-{{ $row->id }}-tab"
-                                data-toggle="tab">Daily</a></li>
-                    @endif
-                    @if ($row->weekly)
-                        <li><a href="#3price-tab-{{ $row->id }}" id="3price-tab-{{ $row->id }}-tab"
-                                data-toggle="tab">Weekly</a></li>
-                    @endif
-                    @if ($row->monthly)
-                        <li><a href="#4price-tab-{{ $row->id }}" id="4price-tab-{{ $row->id }}-tab"
-                                data-toggle="tab">Monthly</a></li>
-                    @endif
-                </ul>
-            </div>
-        @endif
 
-        <div class="col-sm-7 col-xs-7 pl-3 pr-0">
+        <div class="price-tab tab-content-wrapper">
+            <div class="tab-content">
+                <?php
+                    foreach ($spacePriceData['prices'] as $key => $priceData) {
+                        ?>
+                <div class="tab-pane {{ $spacePriceData['priceType'] === $key ? 'active' : '' }}"
+                    id="{{ $key }}-price-tab-{{ $row->id }}"
+                    aria-labelledby="{{ $key }}-price-tab-{{ $row->id }}-tab">
+                    @if (
+                        \App\Helpers\CodeHelper::checkIfNumValNotNull($priceData['discountedPrice']) &&
+                            $priceData['discountedPrice'] < $priceData['price']
+                    )
+                        <span class="onsale 2">${{ $priceData['price'] }}</span>
+                        <span class="text-price">${{ $priceData['discountedPrice'] }}</span>
+                    @else
+                        <span class="text-price">${{ $priceData['price'] }}</span>
+                    @endif
+                </div>
+                <?php
+                    }
+                    ?>
+            </div>
+            <ul class="nav nav-tabs" role="tablist">
+                <?php
+                    foreach ($spacePriceData['prices'] as $key => $priceData) {
+                        ?>
+                <li class="{{ $spacePriceData['priceType'] === $key ? 'active' : '' }}"><a
+                        href="#{{ $key }}-price-tab-{{ $row->id }}"
+                        id="{{ $key }}-price-tab-{{ $row->id }}-tab"
+                        data-toggle="tab">{{ $key }}</a></li>
+                <?php
+                    }
+                    ?>
+            </ul>
+        </div>
+
+
+        <div class="col-sm-12 content-item-data">
             <div class="item-title">
                 <a @if (!empty($blank)) target="_blank" @endif
                     href="{{ $row->getDetailUrl($include_param ?? true) }}">
@@ -150,7 +101,7 @@
         $review_score = $row->review_data;
         $score_total = $review_score['score_total'];
         ?>
-        <div class="col-sm-5 location-rating mt-4 text-center p-2">
+        <div class="col-sm-12 location-rating mt-4 text-center">
             @if ($score_total != 0)
                 <div class="mb-2"><span class="star-div">{{ $score_total }}</span></div>
                 <div class="rating_stars fulwidthm left pr-4">
@@ -167,31 +118,42 @@
         </div>
     </div>
     <div class="amenities search-icon">
-        <a class="pop" href="#"><span class="amenity total">
+        <div class="pop" href="#"><span class="amenity total">
                 <i class="input-icon field-icon icofont-people"></i> Host</span>
-            <div class="popup">
+            <div class="popup listing-item-box-host-popup">
                 @php $user = \App\User::where('id', $row->create_user)->first(); @endphp
+                @php $totalReviews = $user->review_count!=null ? $user->review_count: 0  @endphp
+                @php $pendingReviews = 5 - $totalReviews  @endphp
                 <div class="author">
-                    <img src="{{ asset('uploads/demo/general') . '/' . $user->avatar }}" alt="Eva Hicks">
+                    <img src="{{ $user->getAvatarUrl() }}" alt="{{ $user->name }}">
                     <div class="author-meta">
                         <h4>{{ $user->name }}</h4>
                         <div class="star">
-                            <i class="fa fa-star yellowtext"></i>
-                            <i class="fa fa-star yellowtext"></i>
-                            <i class="fa fa-star yellowtext"></i>
-                            <i class="fa fa-star yellowtext"></i>
-                            <i class="fa fa-star"></i>
+                            @for ($number = 1; $number <= $totalReviews; $number++)
+                                <i class="fa fa-star yellowtext"></i>
+                            @endfor
+                            @for ($number = 1; $number <= $pendingReviews; $number++)
+                                <i class="fa fa-star"></i>
+                            @endfor
                         </div>
-                        <h3>Since {{ date_format($user->created_at, 'Y') }}</h3>
+                        <h5>{{ $totalReviews }}</h5>
+                        <p>(<a href="{{ url('/profile/' . $user->user_name) }}">
+                                @if ($totalReviews <= 1)
+                                    {{ __(':count review', ['count' => $totalReviews]) }}
+                                @else
+                                    {{ __(':count reviews', ['count' => $totalReviews]) }}
+                                @endif
+                            </a>)</p>
                     </div>
                 </div>
             </div>
-        </a>
+        </div>
         <a href="{{ $row->getDetailUrl($include_param ?? true) }}"><span class="amenity bed" data-toggle="tooltip"
                 title="" data-original-title="Manually Book">
                 <i class="input-icon field-icon icofont-ui-calendar"></i>Book</span>
         </a>
-        <a href="#"><span class="amenity bath" data-toggle="tooltip" title=""
+        <a href="javascript:;" class="contactHostModalTrigger" data-host="{{ $user->id }}"
+            data-space="{{ $row->id }}"><span class="amenity bath" data-toggle="tooltip" title=""
                 data-original-title="Contact Us">
                 <i class="input-icon field-icon icofont-envelope"></i> Contact</span>
         </a>

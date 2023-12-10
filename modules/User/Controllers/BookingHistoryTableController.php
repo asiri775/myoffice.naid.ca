@@ -13,8 +13,8 @@ class BookingHistoryTableController extends Controller
 {
     public function dateConvertion($date)
     {
-        $d=explode('/',$date);
-        $date=$d[2].'-'.$d[0].'-'.$d[1];
+        $d = explode('/', $date);
+        $date = $d[2] . '-' . $d[0] . '-' . $d[1];
         return $date;
     }
 
@@ -57,16 +57,14 @@ class BookingHistoryTableController extends Controller
 
         if (request()->from) {
             $from = $this->dateConvertion(request()->from);
-            if(!isset($from))
-            {
+            if (!isset($from)) {
                 $from = Carbon::now()->startOfYear();
             }
             $bookings = $bookings->where('start_date', '>=',  $from);
         }
         if (request()->to) {
             $to = $this->dateConvertion(request()->to);
-            if(!isset($to))
-            {
+            if (!isset($to)) {
                 $to = Carbon::now()->startOfYear();
             }
             $bookings = $bookings->where('end_date', '<=', $to);
@@ -79,12 +77,12 @@ class BookingHistoryTableController extends Controller
 
         // have complete
 
-//        if (request()->title != '') {
-//            $name = request()->title;
-//            $bookings = $bookings->whereHas('service', function ($query) use ($name) {
-//                $query->where('title', 'like', "%{$name}%");
-//            });
-//        }
+        //        if (request()->title != '') {
+        //            $name = request()->title;
+        //            $bookings = $bookings->whereHas('service', function ($query) use ($name) {
+        //                $query->where('title', 'like', "%{$name}%");
+        //            });
+        //        }
 
 
         if (request()->id != '') {
@@ -96,11 +94,9 @@ class BookingHistoryTableController extends Controller
 
         return DataTables::of($bookings)
             ->addColumn('checkboxes', function ($booking) {
-                $select = '<input type="checkbox" name="checkbox[]" value="'.$booking->id.'">';
+                $select = '<input type="checkbox" name="checkbox[]" value="' . $booking->id . '">';
                 return $select;
-
             })
-
             ->addColumn('title', function ($booking) {
                 if ($service = $booking->service) {
                     $translation = $service->translateOrOrigin(app()->getLocale());
@@ -112,31 +108,36 @@ class BookingHistoryTableController extends Controller
                 }
                 return $title;
             })
+            ->addColumn('id', function ($booking) {
+                return '<a target="_blank" href="' . route('user.booking_details', $booking->id) . '">' . $booking->id . '</a>';
+            })
             ->addColumn('start_date', function ($booking) {
                 $start_date = display_date($booking->start_date);
-                return $start_date;
+                return '<a target="_blank" href="' . route('user.booking_details', $booking->id) . '">' . $start_date . '</a>';
             })
             ->addColumn('end_date', function ($booking) {
                 $end_date = display_date($booking->end_date);
-                return $end_date;
+                return '<a target="_blank" href="' . route('user.booking_details', $booking->id) . '">' . $end_date . '</a>';
             })
             ->addColumn('total', function ($booking) {
                 $total = '$' . $booking->total;
                 return $total;
             })
             ->addColumn('book_status', function ($booking) {
-                $book_status = 'Status';
-                return $book_status;
+                $book_status = $booking->statusText();
+                $book_class = $booking->statusClass();
+                return '<span class="status-btn ' . $book_class . '">' . strtoupper($book_status) . '</span>';
             })
             ->addColumn('transaction_status', function ($booking) {
-                $transaction_status = 'Status';
-                return $transaction_status;
+                $book_status = $booking->paymentStatusText();
+                $book_class = $booking->paymentStatusClass();
+                return '<span class="status-btn ' . $book_class . '">' . strtoupper($book_status) . '</span>';
             })
             ->addColumn('actions', function ($booking) {
                 $actions = '<div class="text-right data-tb-icon">
                                 <div class="btn-group">
 
-                                    <a type="button" href="' . route('user.booking_details', $booking->id) . '" class="btn btn-view btn-icon btn-lg">
+                                    <a target="_blank" type="button" href="' . route('user.booking_details', $booking->id) . '" class="btn btn-view btn-icon btn-lg">
                                                                     <span class="material-icons" data-toggle="tooltip" data-placement="top"
                                                                           title="View">visibility</span>
                                     </a>
@@ -158,7 +159,7 @@ class BookingHistoryTableController extends Controller
                             </div>';
                 return $actions;
             })
-            ->rawColumns(['title', 'book_status', 'transaction_status', 'checkboxes', 'actions'])
+            ->rawColumns(['title', 'book_status', 'transaction_status', 'checkboxes', 'actions', 'id', 'start_date', 'end_date', 'book_status'])
             ->make(true);
     }
 }

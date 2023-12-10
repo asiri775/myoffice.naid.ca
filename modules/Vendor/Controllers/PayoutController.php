@@ -27,7 +27,7 @@ class PayoutController extends FrontendController
     }
 
     public function index(){
-
+        return redirect('/user/wallet');        
         $this->checkPermission('dashboard_vendor_access');
         $data = [
             'page_title'=>__("Payouts Management"),
@@ -43,7 +43,7 @@ class PayoutController extends FrontendController
             ],
             'payouts'=>VendorPayout::query()->where('vendor_id',Auth::id())->orderBy('id','desc')->paginate(20),
             'currentUser'=>Auth::user(),
-            'available_payout_amount'=>Auth::user()->available_payout_amount
+            'available_payout_amount'=>400
         ];
 
         return view('Vendor::frontend.payouts.index',$data);

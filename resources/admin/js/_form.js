@@ -228,6 +228,7 @@ import BookingCoreAdaterPlugin from './ckeditor/uploadAdapter'
             $(this).attr("value",value);
         });
     });
+    
     $(".form-group-item .btn-add-item").click(function () {
         var p = $(this).closest(".form-group-item").find(".g-items");
 

@@ -45,7 +45,7 @@
                 ready: function (engineMap) {
                     engineMap.addMarker([{{$row->map_lat}}, {{$row->map_lng}}], {
                         icon_options: {
-                            iconUrl:"{{get_file_url(setting_item("flight_icon_marker_map"),'full') ?? url('images/icons/png/pin.png') }}"
+                            iconUrl:"{{get_file_url(setting_item("flight_icon_marker_map"),'full') ?? url('images/myoffice-marker-1.png') }}"
                         }
                     });
                 }

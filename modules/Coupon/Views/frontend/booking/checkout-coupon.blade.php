@@ -11,11 +11,11 @@
                     </button>
                 </div>
             </div>
-        @endif 
+        @endif
         @if(!empty($booking->coupons))
             <ul class="p-0 mb-3 list-coupons">
                 @foreach($booking->coupons as $item)
-                    <li class="item">
+                    <li class="item pr-0" style="justify-content: right !important;">
                         <div class="label">
                             {{ $item->coupon_data['code'] }}
                             <i data-toggle="tooltip" data-placement="top" class="icofont-info-circle" data-original-title="{{ $item->coupon_data['name'] }}"></i>

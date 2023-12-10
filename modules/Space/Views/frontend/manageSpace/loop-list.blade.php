@@ -51,7 +51,7 @@
                         <a href="{{ route("space.vendor.delete",['id'=>$row->id,'permanently_delete'=>1]) }}" class="btn btn-danger" data-confirm="<?php echo e(__("Do you want to permanently delete?")); ?>">{{__("Del")}}</a>
                     @endif
                 @else
-                    <a href="javascript:;" data-id="{{$row->id}}" class="viewSpaceCalendar btn btn-success">{{__("View Calendar")}}</a>
+                    <a href="javascript:;" data-target="#availabilityCalendar" data-toggle="modal" data-id="{{$row->id}}" class="viewSpaceCalendar btn btn-success">{{__("View Calendar")}}</a>
                     <a href="{{route('space.vendor.clone',[$row->id])}}" target="_blank" class="btn btn-primary">{{__("Clone")}}</a>
                     <a href="{{$row->getDetailUrl()}}" target="_blank" class="btn btn-info">{{__("View")}}</a>
                     @if(Auth::user()->hasPermissionTo('space_update'))

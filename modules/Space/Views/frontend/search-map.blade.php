@@ -1,6 +1,6 @@
 @extends('layouts.common_space')
 
-@section('content')
+@section('content') 
 
     <div class="layout1 bravo_wrap">
         <div class="bravo_search_tour bravo_search_space">
@@ -26,7 +26,7 @@
             </div>
         </div>
 
-        <div sty class="container-fluid footer">
+        <div sty class="container-fluid footer"> 
             <div class="copyright sm-text-center">
                 <p class="small-text text-black m-0">
                     Copyright © {{date('Y')}} {{env('APP_NAME')}}. All Rights Reserved.

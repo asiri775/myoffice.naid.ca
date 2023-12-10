@@ -21,15 +21,31 @@ Route::group(['prefix'=>'user/'.config('space.space_route_prefix'),'middleware' 
     Route::get('/recovery','ManageSpaceController@recovery')->name('space.vendor.recovery');
     Route::get('/restore/{id}','ManageSpaceController@restore')->name('space.vendor.restore');
 
+    Route::get('/calendar/{id}','ManageSpaceController@calendar')->name('space.vendor.calendar');
+
+    Route::get('/all-earning-reports','ManageSpaceController@allEarningReports')->name('space.vendor.allEarningReports');
+
+    Route::get('/earning-reports','ManageSpaceController@spaceEarningReports')->name('space.vendor.spaceEarningReports');
+    Route::get('/earning-reports-stats','ManageSpaceController@spaceEarningReportStats')->name('space.vendor.spaceEarningReportStats');
+
     Route::post('/update-space-booking/{id}','ManageSpaceController@updateBooking')->name('space.vendor.availability.updateBooking');
+
+    Route::post('/datatable','ManageSpaceController@datatable')->name('space.vendor.datatable');
 
 });
 
+Route::get('/calendar-events','AvailabilityController@calendarEvents')->name('space.vendor.availability.calendarEvents');
+
 Route::group(['prefix'=>'user/'.config('space.space_route_prefix')],function(){
     Route::group(['prefix'=>'availability'],function(){
-        Route::get('/','AvailabilityController@index')->name('space.vendor.availability.index');
+        Route::get('/','AvailabilityController@index')->name('space.vendor.availability.index');   
+
+
         Route::get('/available-dates','AvailabilityController@availableDates')->name('space.vendor.availability.availableDates');
-        Route::get('/calendar-events','AvailabilityController@calendarEvents')->name('space.vendor.availability.calendarEvents');
+        
+
+        Route::get('/calendar-events','AvailabilityController@calendcalendarAppointmentsarEvents')->name('space.vendor.availability.calendarAppointments');
+
         Route::post('/confirm-block-date/{id}','AvailabilityController@confirmBlockDate')->name('space.vendor.availability.confirmBlockDate');
 
         Route::get('/loadDates','AvailabilityController@loadDates')->name('space.vendor.availability.loadDates');

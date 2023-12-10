@@ -32,6 +32,15 @@ jQuery(function ($) {
                 }
             }
         });
+        window.mapEngine = mapEngine;
+    }
+
+    function resetMapZoomAndPos(markers) {
+        mapEngine.map.setZoom(bravo_map_data.map_zoom_default);
+        if (markers.length > 0) {
+            let firstMarker = markers[0];
+            mapEngine.map.setCenter({ lat: firstMarker.lat, lng: firstMarker.lng });
+        }
     }
 
     $('.bravo_form_search_map .smart-search #id_label_single').change(function () {
@@ -49,14 +58,34 @@ jQuery(function ($) {
     $('.bravo_form_search_map .btn-filter,.btn-apply-advances').click(function () {
         reloadForm();
     });
+
+    $(document).on("click", "#spaceOrderBySelector a", function () {
+        var obj = $(this);
+        var val = obj.attr("data-value");
+        var txtV = obj.text();
+        $("#spaceOrderBy").val(val);
+        $("#spaceOrderBySelectorMain span").html(txtV).click();
+        reloadForm();
+    });
+
     $('.btn-apply-advances').click(function () {
         $('#advance_filters').addClass('d-none');
-    })
+    });
+
+    $(document).on("submit", "#topHeadSearch form", function (e) {
+        if ($("#spaceSearchQTerm").length > 0) {
+            e.preventDefault();
+            $("#spaceSearchQTerm").val($("#topHeadSearchInput").val());
+            reloadForm();
+        }
+    });
 
     function reloadForm() {
         $('.map_loading').show();
+        var orderBY = $("#spaceOrderBy").val();
+        var spaceSearchQTerm = encodeURI($("#spaceSearchQTerm").val());
         $.ajax({
-            data: $('.bravo_form_search_map input,select').serialize() + '&_ajax=1',
+            data: $('.bravo_form_search_map input,select').serialize() + '&userLat=' + window.userLat + '&userLng=' + window.userLng + '&q=' + spaceSearchQTerm + '&orderby=' + orderBY + '&_ajax=1',
             url: window.location.href.split('?')[0],
             dataType: 'json',
             type: 'get',
@@ -65,6 +94,7 @@ jQuery(function ($) {
                 if (json.status) {
                     mapEngine.clearMarkers();
                     mapEngine.addMarkers2(json.markers);
+                    resetMapZoomAndPos(json.markers);
                     $('.bravo-list-item').replaceWith(json.html);
                     $('.listing_items').animate({
                         scrollTop: 0
@@ -89,6 +119,28 @@ jQuery(function ($) {
             }
         })
     }
+
+
+    const locsuccessCallback = (position) => {
+        let latitude = position.coords.latitude;
+        let longitude = position.coords.longitude;
+        window.userLat = latitude;
+        window.userLng = longitude;
+        reloadForm();
+    };
+
+    const locerrorCallback = (error) => {
+        console.log(error);
+    };
+
+    navigator.geolocation.getCurrentPosition(
+        locsuccessCallback,
+        locerrorCallback,
+        {
+            enableHighAccuracy: true,
+            maximumAge:Infinity
+        }
+    );
 
     function reloadFormByUrl(url) {
         $('.map_loading').show();
@@ -389,7 +441,7 @@ jQuery(function ($) {
             a = 'client';
             e = document.documentElement || document.body;
         }
-        return {width: e[a + 'Width'], height: e[a + 'Height']};
+        return { width: e[a + 'Width'], height: e[a + 'Height'] };
     }
 
     $(document).on('click', '.searchheader .responsivehomebtn', function () {
@@ -439,3 +491,4 @@ var checkout = $('#dpd2').datepicker({
     checkout.hide();
 
 }).data('datepicker');
+

@@ -2,7 +2,7 @@
     <div class="panel-title"><strong>{{__("Locations")}}</strong></div>
     <div class="panel-body">
         @if(is_default_lang())
-            <div class="form-group">
+            <div class="form-group d-none">
                 <label class="control-label">{{__("Location")}}</label>
                 @if(!empty($is_smart_search))
                     <div class="form-group-smart-search">
@@ -54,8 +54,20 @@
             </div>
         @endif
         <div class="form-group">
-            <label class="control-label">{{__("Real address")}}</label>
-            <input type="text" name="address" id="customPlaceAddress" class="form-control" placeholder="{{__("Real address")}}" value="{{$translation->address}}">
+            <label class="control-label">{{__("Address")}}</label>
+            <input type="text" name="address" id="customPlaceAddress" class="form-control" placeholder="{{__("Address")}}" value="{{old('address', $translation->address)}}">
+        </div>
+        <div class="form-group">
+            <label class="control-label">{{__("City")}}</label>
+            <input type="text" name="city" id="customPlaceCity" class="form-control" placeholder="{{__("City") }}" value="{{old('city', $translation->city)}}">
+        </div>
+		<div class="form-group">
+            <label class="control-label">{{__("State")}}</label>
+            <input type="text" name="state" id="customPlaceState" class="form-control" placeholder="{{__("State") }}" value="{{old('state', $translation->state)}}">
+        </div>
+		<div class="form-group">
+            <label class="control-label">{{__("Zip")}}</label>
+            <input type="text" name="state" id="customPlaceZip" class="form-control" placeholder="{{__("Zip") }}" value="{{old('zip', $translation->zip)}}">
         </div>
         @if(is_default_lang())
             <div class="form-group">
@@ -66,15 +78,15 @@
                     <div class="g-control">
                         <div class="form-group">
                             <label>{{__("Map Latitude")}}:</label>
-                            <input type="text" name="map_lat" class="form-control" value="{{$row->map_lat}}" onkeydown="return event.key !== 'Enter';">
+                            <input type="text" name="map_lat" class="form-control" value="{{old('map_lat', $row->map_lat)}}" onkeydown="return event.key !== 'Enter';">
                         </div>
                         <div class="form-group">
                             <label>{{__("Map Longitude")}}:</label>
-                            <input type="text" name="map_lng" class="form-control" value="{{$row->map_lng}}" onkeydown="return event.key !== 'Enter';">
+                            <input type="text" name="map_lng" class="form-control" value="{{old('map_lng', $row->map_lng)}}" onkeydown="return event.key !== 'Enter';">
                         </div>
                         <div class="form-group">
                             <label>{{__("Map Zoom")}}:</label>
-                            <input type="text" name="map_zoom" class="form-control" value="{{$row->map_zoom ?? "8"}}" onkeydown="return event.key !== 'Enter';">
+                            <input type="text" name="map_zoom" class="form-control" value="{{old('map_zoom', $row->map_zoom) ?? "8"}}" onkeydown="return event.key !== 'Enter';">
                         </div>
                     </div>
                 </div>

@@ -32,6 +32,8 @@ class Language extends BaseModel
             }
             return $q->where('status', 'publish')->orderByRaw('CASE WHEN (locale = \''.e(setting_item('site_locale')).'\') THEN 0 ELSE 1 END')->get();
         });
+        //overwrite to only english
+        $value = parent::query()->where('locale', 'en')->get();
         return $value;
 
     }

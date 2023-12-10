@@ -15,19 +15,29 @@ $countUnread = $checkNotify->where('read_at', null)->count();
 ?>
 
 <div class="indexheaderwrper innerheader whitebg">
-    <div class="container-fluid">
+    <div class="container-fluid header-menu-web">
         <div class="indexlogo pull-left ">
             <a href="{{route('home')}}" class="fulwidthm left"><img src="images/logo_myoffice.png" alt="MyOffice Logo" title="MyOffice"></a>
         </div>
         <div class="responsivehomebtn">
             <i class="fa fa-bars"></i>
         </div>
+        <div id="topHeadSearch">
+            <form method="get" action="{{ route('space.search') }}">
+                <input type="hidden" name="_layout" value="map">
+                <input type="hidden" name="map_lat" value="" id="mapLatV">
+                <input type="hidden" name="map_lgn" value="" id="mapLangV">
+                <input value="{{ isset($_GET['q']) ? $_GET['q'] : '' }}" name="q" type="text"
+                    id="topHeadSearchInput" class="form-control" placeholder="Search for an Office or Business Name">
+                <a href="javascript:;"><i class="fa fa-search"></i></a>
+            </form>
+        </div>
         <ul class="menu">
             <li class="has-submenu">
                 <a href="#" title="Find MyOffice">Find MyOffice</a>
                 <ul class="sub-menu">
                     <?php
-                    $space_attrs = Modules\Core\Models\Terms::where('attr_id', 3)->get();
+                    $space_attrs = Modules\Core\Models\Terms::where('attr_id', 3)->get();    
                     ?>
                     @foreach( $space_attrs as $space_attr)
                         <li><a href="{{route('space.search')}}?terms[]={{ $space_attr->id }}">{{ $space_attr->name }}</a></li>

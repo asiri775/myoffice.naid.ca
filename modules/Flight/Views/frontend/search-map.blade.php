@@ -41,5 +41,5 @@
         };
     </script>
     <script type="text/javascript" src="{{ asset("libs/ion_rangeslider/js/ion.rangeSlider.min.js") }}"></script>
-    <script type="text/javascript" src="{{ asset('module/space/js/space-map.js?v=1&_ver='.config('app.version')) }}"></script>
+    <script type="text/javascript" src="{{ asset('module/space/js/space-map.js?v=1&t='.time().'&_ver='.config('app.version')) }}"></script>
 @endsection

@@ -8209,12 +8209,12 @@ ol, ul {
     border: 3px dashed grey
 }
 
-booking-review .booking-review-content .review-section .service-info img {
+.booking-review .booking-review-content .review-section .service-info img {
     width: 100%;
   }
   .booking-review .booking-review-content .review-section {
-    padding: 10px 30px 0 23px !important;
-    border-bottom: unset !important;
+    padding: 0px 30px 0 23px !important;
+    border-bottom: unset !important; 
   }
 
   .service-name-booking-text{
@@ -8223,18 +8223,22 @@ booking-review .booking-review-content .review-section .service-info img {
     line-height: 25px;
     font-weight: 500;
   }
-  .booking-detail .review-list .booking-table-listing{
+  .booking-detail .review-list .booking-table-listing, .bravo-booking-page .review-list .booking-table-listing{
     width: 100%;
   }
-  .booking-detail .review-list .booking-table-listing thead{
+  .booking-detail .review-list .booking-table-listing thead,.bravo-booking-page .review-list .booking-table-listing thead{
     background-color: #ffc435;
     border:1px solid #9fa7ae;  
   }
 
-  .booking-detail .review-list .booking-table-listing th,  .booking-detail .review-list .booking-table-listing td{
-    text-align: right; padding-right: 16px;  padding-top: 2px;
+  .booking-detail .review-list .booking-table-listing th, .bravo-booking-page .review-list .booking-table-listing td{
+    text-align: right;
+    padding-right: 25px;
+    padding-top: 5px;
+    font-size: 12px;
+    padding-bottom: 3px;
   }
- .booking-detail .review-list .booking-table-listing i{
+ .booking-detail .review-list .booking-table-listing i, .bravo-booking-page .review-list .booking-table-listing i{
     float: right;
     padding-top: 4px;
   }
@@ -8257,11 +8261,12 @@ booking-review .booking-review-content .review-section .service-info img {
     width: 120px;
   }
 
-  .booking-detail .booking-review-content .review-list .label {
+  .booking-detail .booking-review-content .review-list .label ,.bravo-booking-page .booking-review-content .review-list .label{
    color: #000;
+   font-size:100%;
+   font-weight: normal;
   }
-  .booking-detail .review-list table .grand-total{
+  .booking-detail .review-list table .grand-total,.bravo-booking-page .review-list table .grand-total{
     font-weight: 800;
     width: 100%;
   }
-  

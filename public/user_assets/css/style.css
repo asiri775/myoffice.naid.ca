@@ -3,6 +3,9 @@
 * Override Pages default styles or create your own styles here
 
 */
+.status-btn {
+    background: #ccc;
+}  
 .jumbotron h1.large-demo-text{
 	font-size: 150px;
 }
@@ -646,8 +649,8 @@ ul, li {
 .nav-tabs > li > a {
     padding: 25px 17px;
 }
-.nav-tabs-fillup > li > a {
-
+.nav-tabs-fillup > li > a { 
+    font-family: Montserrat;
     font-size: 14px !important;  
 }
 .icon-details a,.icon-details a:hover {

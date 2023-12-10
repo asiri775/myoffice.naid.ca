@@ -20,18 +20,20 @@ class ReviewController extends Controller
         $service_type = $request->input('review_service_type');
         $service_id = $request->input('review_service_id');
         $review_upload = $request->input('review_upload', []);
+        $referenceId = $request->input('reference_id', null);
 
         $allServices = get_bookable_services();
 
-        if (empty($allServices[$service_type])) {
+        if (empty($allServices[$service_type])) { 
             if($is_return){
                 return $this->sendError(__("Service type not found"));
             }else{
                 return redirect()->to(url()->previous() . '#review-form')->with('error', __('Service type not found'));
             }
         }
-
+  
         $module_class = $allServices[$service_type];
+        // dd($service_id);
         $module = $module_class::find($service_id);
         if(empty($module)){
             if($is_return){
@@ -41,38 +43,38 @@ class ReviewController extends Controller
             }
         }
 
-        $reviewEnable = $module->getReviewEnable();
-        if (!$reviewEnable) {
-            if($is_return){
-                return $this->sendError(__("Review not enable"));
-            }else{
-                return redirect()->to(url()->previous() . '#review-form')->with('error', __('Review not enable'));
-            }
-        }
-        $reviewEnableAfterBooking = $module->check_enable_review_after_booking();
-        if (!$reviewEnableAfterBooking) {
-            if($is_return){
-                return $this->sendError(__("You need booking before write a review"));
-            }else{
-                return redirect()->to(url()->previous() . '#review-form')->with('error', __('You need booking before write a review'));
-            }
-        }else{
-            if (!$module->check_allow_review_after_making_completed_booking() ) {
-                if($is_return){
-                    return $this->sendError(__("You can review after making completed booking"));
-                }else{
-                    return redirect()->to(url()->previous() . '#review-form')->with('error', __('You can review after making completed booking'));
-                }
-            }
-        }
+        // $reviewEnable = $module->getReviewEnable();
+        // if (!$reviewEnable) {
+        //     if($is_return){
+        //         return $this->sendError(__("Review not enable"));
+        //     }else{
+        //         return redirect()->to(url()->previous() . '#review-form')->with('error', __('Review not enable'));
+        //     }
+        // }
+        // $reviewEnableAfterBooking = $module->check_enable_review_after_booking();
+        // if (!$reviewEnableAfterBooking) {
+        //     if($is_return){
+        //         return $this->sendError(__("You need booking before write a review"));
+        //     }else{
+        //         return redirect()->to(url()->previous() . '#review-form')->with('error', __('You need booking before write a review'));
+        //     }
+        // }else{
+        //     if (!$module->check_allow_review_after_making_completed_booking() ) {
+        //         if($is_return){
+        //             return $this->sendError(__("You can review after making completed booking"));
+        //         }else{
+        //             return redirect()->to(url()->previous() . '#review-form')->with('error', __('You can review after making completed booking'));
+        //         }
+        //     }  
+        // }
 
-        if ($module->create_user == Auth::id()) {
-            if($is_return){
-                return $this->sendError(__("You cannot review your service"));
-            }else{
-                return redirect()->to(url()->previous() . '#review-form')->with('error', __('You cannot review your service'));
-            }
-        }
+        // if ($module->create_user == Auth::id()) {
+        //     if($is_return){
+        //         return $this->sendError(__("You cannot review your service"));
+        //     }else{
+        //         return redirect()->to(url()->previous() . '#review-form')->with('error', __('You cannot review your service'));
+        //     }
+        // }
 
         $rules = [
             'review_title'   => 'required',
@@ -117,7 +119,7 @@ class ReviewController extends Controller
         }
         if(setting_item('review_upload_picture') && !empty($review_upload)){
             $metaReview[] = [
-                "object_id"    => $service_id,
+                "object_id"    => $service_id,  
                 "object_model" => $service_type,
                 "name"         => 'upload_picture',
                 "val"          => json_encode($review_upload)
@@ -131,7 +133,8 @@ class ReviewController extends Controller
             "rate_number"  => $rate ?? 0,
             "author_ip"    => $request->ip(),
             "status"       => !$module->getReviewApproved() ? "approved" : "pending",
-            'vendor_id'     =>$module->create_user
+            'vendor_id'    => $module->create_user,
+            "reference_id" => $referenceId
         ]);
         if ($review->save()) {
             if (!empty($metaReview)) {

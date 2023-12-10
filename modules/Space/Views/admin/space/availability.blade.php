@@ -19,11 +19,22 @@ if ($row->last_working_day == null) {
     <div class="panel-body">
         <div class="row">
             <div class="col-md-12 col-12">
-                <div class="form-group">
-                    <input value="1" {{($row->long_term_rental == 1) ? 'checked': ''}} type="checkbox"
-                           id="long_term_rental"
-                           name="long_term_rental">
-                    <label for="long_term_rental">Allow Long Term Rental</label>
+                <div class="switch-toggle-inline">
+                <div class="form-group switch-toggle">
+                <label class="switch">
+                    
+  <input type="checkbox"  {{(old('long_term_rental', $row->long_term_rental) == 1 || old('long_term_rental', $row->long_term_rental) == "on") ? 'checked': ''}} type="checkbox" id="long_term_rental" name="long_term_rental">
+  <span class="slider round"></span>
+</label>
+                    <span for="long_term_rental">Allow Long Term Rental</span>
+                </div>
+                <div class="form-group switch-toggle">
+                <label class="switch">
+  <input type="checkbox"  {{(old('rapidbook', $row->rapidbook) == 1 || old('rapidbook', $row->rapidbook) == "on") ? 'checked': ''}} type="checkbox" id="rapidbook" name="rapidbook">
+  <span class="slider round"></span>
+</label>   
+                    <span for="rapidbook">Rapidbook</span>
+                </div>
                 </div>
             </div>
         </div>
@@ -51,7 +62,7 @@ if ($row->last_working_day == null) {
                 <div class="form-group">
                     <label class="control-label">{{__("Minimum hour stay requirements")}}</label>
                     <input type="number" step="1" name="min_hour_stays" class="form-control"
-                           value="{{$row->min_hour_stays}}" placeholder="{{__("Ex: 2")}}">
+                           value="{{old('min_hour_stays', $row->min_hour_stays)}}" placeholder="{{__("Ex: 2")}}">
                     <i>{{ __("Leave blank if you dont need to set minimum hour stay option") }}</i>
                 </div>
             </div>
@@ -59,7 +70,7 @@ if ($row->last_working_day == null) {
                 <div class="form-group">
                     <label class="control-label">{{__("Minimum day stay requirements")}}</label>
                     <input type="number" step="1" name="min_day_stays" class="form-control"
-                           value="{{$row->min_day_stays}}" placeholder="{{__("Ex: 2")}}">
+                           value="{{old('min_day_stays', $row->min_day_stays)}}" placeholder="{{__("Ex: 2")}}">
                     <i>{{ __("Leave blank if you dont need to set minimum day stay option") }}</i>
                 </div>
             </div>
@@ -73,7 +84,7 @@ if ($row->last_working_day == null) {
                         <?php
                         foreach (\App\Helpers\Constants::DAYS as $day){
                         ?>
-                        <option @if($row->first_working_day == $day) selected="selected"
+                        <option @if(old('first_working_day', $row->first_working_day) == $day) selected="selected"
                                 @endif value="{{$day}}">{{$day}}</option>
                         <?php
                         }
@@ -89,7 +100,7 @@ if ($row->last_working_day == null) {
                         <?php
                         foreach (\App\Helpers\Constants::DAYS as $day){
                         ?>
-                        <option @if($row->last_working_day == $day) selected="selected"
+                        <option @if(old('last_working_day', $row->last_working_day) == $day) selected="selected"
                                 @endif value="{{$day}}">{{$day}}</option>
                         <?php
                         }
@@ -105,7 +116,7 @@ if ($row->last_working_day == null) {
                 <div class="form-group">
                     <label class="control-label">{{__("Minimum hour stay requirements")}}</label>
                     <input type="number" step="1" name="min_hour_stays" class="form-control"
-                           value="{{$row->min_hour_stays}}" placeholder="{{__("Ex: 2")}}">
+                           value="{{old('min_hour_stays', $row->min_hour_stays)}}" placeholder="{{__("Ex: 2")}}">
                     <i>{{ __("Leave blank if you dont need to set minimum hour stay option") }}</i>
                 </div>
             </div>
@@ -113,7 +124,7 @@ if ($row->last_working_day == null) {
                 <div class="form-group">
                     <label class="control-label">{{__("Minimum day stay requirements")}}</label>
                     <input type="number" step="1" name="min_day_stays" class="form-control"
-                           value="{{$row->min_day_stays}}" placeholder="{{__("Ex: 2")}}">
+                           value="{{old('min_day_stays', $row->min_day_stays)}}" placeholder="{{__("Ex: 2")}}">
                     <i>{{ __("Leave blank if you dont need to set minimum day stay option") }}</i>
                 </div>
             </div>

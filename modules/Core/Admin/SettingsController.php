@@ -65,11 +65,18 @@ class SettingsController extends AdminController
         }
 
         $this->checkPermission('setting_update');
+
+        //dd($_POST);die;
+
         $settingsGroupKeys = array_keys($this->groups);
+
         if (empty($group) or !in_array($group, $settingsGroupKeys)) {
             $group = $settingsGroupKeys[0];
         }
+        
         $group_data = $this->groups[$group];
+
+        //dd($group_data);
 
         $keys = [];
         $htmlKeys = [];
@@ -130,6 +137,9 @@ class SettingsController extends AdminController
                 Settings::clearCustomCssCache();
                 break;
         }
+
+        //dd($group_data);
+
         if(!empty($group_data['keys'])) $keys = $group_data['keys'];
         if(!empty($group_data['html_keys'])) $htmlKeys = $group_data['html_keys'];
 
@@ -144,6 +154,9 @@ class SettingsController extends AdminController
 
         if (!empty($request->input())) {
             if (!empty($keys)) {
+
+                //dd($keys);
+
                 $all_values = $request->input();
                 //If we found callback validate data before save
                 if(!empty($group_data['filter_values_callback']) and is_callable($group_data['filter_values_callback']))
@@ -155,7 +168,7 @@ class SettingsController extends AdminController
                 foreach ($keys as $key) {
                     if(in_array($key,$filter_demo_mode)){
                         continue;
-                    }
+                    } 
                     $setting_key = $key.($lang ? '_'.$lang : '');
 
                     $check = Settings::where('name', $setting_key)->first();

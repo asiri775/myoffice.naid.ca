@@ -13,7 +13,6 @@ class NormalCheckoutController extends BookingController
     }
     public function confirmPayment(Request $request, $gateway)
     {
-        
         $gateways = get_payment_gateways();
         if (empty($gateways[$gateway]) or !class_exists($gateways[$gateway])) {
             return $this->sendError(__("Payment gateway not found"));
@@ -22,7 +21,6 @@ class NormalCheckoutController extends BookingController
         if (!$gatewayObj->isAvailable()) {
             return $this->sendError(__("Payment gateway is not available"));
         }
-  
         $res = $gatewayObj->confirmNormalPayment($request);
         $status = $res[0] ?? null;
         $message = $res[1] ?? null;

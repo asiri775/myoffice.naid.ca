@@ -10,6 +10,7 @@
     "require": {
         "php": "^7.3.0",
         "aws/aws-sdk-php": "~3.0",
+        "barryvdh/laravel-dompdf": "^1.0",
         "bavix/laravel-wallet": "^6.1",
         "eluceo/ical": "^0.15.1",
         "fideloper/proxy": "^4.0",
@@ -27,14 +28,17 @@
         "omnipay/migs": "~3.0",
         "omnipay/paypal": "^3.0",
         "omnipay/stripe": "^3.0",
+        "phpmailer/phpmailer": "^6.8",
         "propaganistas/laravel-phone": "^4.2",
         "rachidlaasri/laravel-installer": "^4.0",
         "rap2hpoutre/laravel-log-viewer": "^1.1",
         "simplesoftwareio/simple-qrcode": "^2.0",
         "spatie/laravel-image-optimizer": "^1.4",
         "spatie/laravel-permission": "^3.16",
+        "twilio/sdk": "^7.12",
         "tymon/jwt-auth": "^1.0",
-        "yajra/laravel-datatables": "^1.5"
+        "yajra/laravel-datatables": "^1.5",
+        "yajra/laravel-datatables-oracle": "^9.21"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.2",
@@ -48,7 +52,10 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
     },
     "extra": {
         "laravel": {

@@ -29,6 +29,14 @@ class UpdateBravoSpaceTable extends Migration
      */
     public function down()
     {
-        //
+        Schema::table('bravo_spaces', function (Blueprint $table) {
+            $table->dropColumn([
+                'discount',
+                'hourly',
+                'daily',
+                'weekly',
+                'monthly',
+            ]);
+        });
     }
 }

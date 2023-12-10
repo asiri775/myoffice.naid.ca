@@ -286,7 +286,7 @@
             <p class="form-group-desc">{{__('Config Booking for space')}}</p>
         </div>
         <div class="col-sm-8">
-            <div class="panel">
+            <div class="panel d-none">
                 <div class="panel-title"><strong>{{__("Booking Type")}}</strong></div>
                 <div class="panel-body">
                     <div class="row">
@@ -301,15 +301,16 @@
                     </div>
                 </div>
             </div>
+            
             <div class="panel">
                 <div class="panel-body">
                     <div class="form-group-item">
-                        <label class="control-label">{{__('Buyer Fees')}}</label>
+                        <label class="control-label">{{__('Guest Fees')}}</label>
                         <div class="g-items-header">
                             <div class="row">
-                                <div class="col-md-5">{{__("Name")}}</div>
-                                <div class="col-md-3">{{__('Price')}}</div>
-                                <div class="col-md-3">{{__('Type')}}</div>
+                                <div class="col-md-7">{{__("Name")}}</div>
+                                <div class="col-md-4">{{__('Price')}}</div>
+                                <div class="col-md-3 d-none">{{__('Type')}}</div>
                                 <div class="col-md-1"></div>
                             </div>
                         </div>
@@ -320,7 +321,7 @@
                                 @foreach($space_booking_buyer_fees as $key=>$buyer_fee)
                                     <div class="item" data-number="{{$key}}">
                                         <div class="row">
-                                            <div class="col-md-5">
+                                            <div class="col-md-7">
                                                 @if(!empty($languages) && setting_item('site_enable_multi_lang') && setting_item('site_locale'))
                                                     @foreach($languages as $language)
                                                         <?php $key_lang = setting_item('site_locale') != $language->locale ? "_".$language->locale : ""   ?>
@@ -336,14 +337,14 @@
                                                     <input type="text" name="space_booking_buyer_fees[{{$key}}][desc]" class="form-control" value="{{$buyer_fee['desc'] ?? ''}}" placeholder="{{__('Fee desc')}}">
                                                 @endif
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-4">
                                                 <input type="number" min="0" step="0.1"  name="space_booking_buyer_fees[{{$key}}][price]" class="form-control" value="{{$buyer_fee['price']}}">
                                                 <select name="space_booking_buyer_fees[{{$key}}][unit]" class="form-control">
                                                     <option @if(($buyer_fee['unit'] ?? "") ==  'fixed') selected @endif value="fixed">{{ __("Fixed") }}</option>
                                                     <option @if(($buyer_fee['unit'] ?? "") ==  'percent') selected @endif value="percent">{{ __("Percent") }}</option>
                                                 </select>
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-3 d-none">
                                                 <select name="space_booking_buyer_fees[{{$key}}][type]" class="form-control d-none">
                                                     <option @if($buyer_fee['type'] ==  'one_time') selected @endif value="one_time">{{__("One-time")}}</option>
                                                 </select>
@@ -366,7 +367,7 @@
                         <div class="g-more hide">
                             <div class="item" data-number="__number__">
                                 <div class="row">
-                                    <div class="col-md-5">
+                                    <div class="col-md-7">
                                         @if(!empty($languages) && setting_item('site_enable_multi_lang') && setting_item('site_locale'))
                                             @foreach($languages as $language)
                                                 <?php $key = setting_item('site_locale') != $language->locale ? "_".$language->locale : ""   ?>
@@ -382,14 +383,14 @@
                                             <input type="text" __name__="space_booking_buyer_fees[__number__][desc]" class="form-control" value="" placeholder="{{__('Fee desc')}}">
                                         @endif
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <input type="number" min="0" step="0.1"  __name__="space_booking_buyer_fees[__number__][price]" class="form-control" value="">
                                         <select __name__="space_booking_buyer_fees[__number__][unit]" class="form-control">
                                             <option value="fixed">{{ __("Fixed") }}</option>
                                             <option value="percent">{{ __("Percent") }}</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-3 d-none">
                                         <select __name__="space_booking_buyer_fees[__number__][type]" class="form-control d-none">
                                             <option value="one_time">{{__("One-time")}}</option>
                                         </select>
@@ -407,8 +408,235 @@
                     </div>
                 </div>
             </div>
+
+            <div class="panel">
+                <div class="panel-body">
+                    <div class="form-group-item">
+                        <label class="control-label">{{__('Host Fees')}}</label>
+                        <div class="g-items-header">
+                            <div class="row">
+                                <div class="col-md-7">{{__("Name")}}</div>
+                                <div class="col-md-4">{{__('Price')}}</div>
+                                <div class="col-md-3 d-none">{{__('Type')}}</div>
+                                <div class="col-md-1"></div>
+                            </div>
+                        </div>
+                        <div class="g-items">
+                            <?php  $languages = \Modules\Language\Models\Language::getActive();  ?>
+                            @if(!empty($settings['space_booking_seller_fees']))
+                                <?php $space_booking_buyer_fees = json_decode($settings['space_booking_seller_fees'],true); ?>
+                                @foreach($space_booking_buyer_fees as $key=>$buyer_fee)
+                                    <div class="item" data-number="{{$key}}">
+                                        <div class="row">
+                                            <div class="col-md-7">
+                                                @if(!empty($languages) && setting_item('site_enable_multi_lang') && setting_item('site_locale'))
+                                                    @foreach($languages as $language)
+                                                        <?php $key_lang = setting_item('site_locale') != $language->locale ? "_".$language->locale : ""   ?>
+                                                        <div class="g-lang">
+                                                            <div class="title-lang">{{$language->name}}</div>
+                                                            <input type="text" name="space_booking_seller_fees[{{$key}}][name{{$key_lang}}]" class="form-control" value="{{$buyer_fee['name'.$key_lang] ?? ''}}" placeholder="{{__('Fee name')}}">
+                                                            <input type="text" name="space_booking_seller_fees[{{$key}}][desc{{$key_lang}}]" class="form-control" value="{{$buyer_fee['desc'.$key_lang] ?? ''}}" placeholder="{{__('Fee desc')}}">
+                                                        </div>
+
+                                                    @endforeach
+                                                @else
+                                                    <input type="text" name="space_booking_seller_fees[{{$key}}][name]" class="form-control" value="{{$buyer_fee['name'] ?? ''}}" placeholder="{{__('Fee name')}}">
+                                                    <input type="text" name="space_booking_seller_fees[{{$key}}][desc]" class="form-control" value="{{$buyer_fee['desc'] ?? ''}}" placeholder="{{__('Fee desc')}}">
+                                                @endif
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="number" min="0" step="0.1"  name="space_booking_seller_fees[{{$key}}][price]" class="form-control" value="{{$buyer_fee['price']}}">
+                                                <select name="space_booking_seller_fees[{{$key}}][unit]" class="form-control">
+                                                    <option @if(($buyer_fee['unit'] ?? "") ==  'fixed') selected @endif value="fixed">{{ __("Fixed") }}</option>
+                                                    <option @if(($buyer_fee['unit'] ?? "") ==  'percent') selected @endif value="percent">{{ __("Percent") }}</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 d-none">
+                                                {{-- <select name="space_booking_seller_fees[{{$key}}][type]" class="form-control d-none">
+                                                    <option @if($buyer_fee['type'] ==  'one_time') selected @endif value="one_time">{{__("One-time")}}</option>
+                                                </select> --}}
+                                                <label>
+                                                    <input type="checkbox" min="0" name="space_booking_seller_fees[{{$key}}][per_person]" value="on" @if($buyer_fee['per_person'] ?? '') checked @endif >
+                                                    {{__("Price per person")}}
+                                                </label>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <span class="btn btn-danger btn-sm btn-remove-item"><i class="fa fa-trash"></i></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @endif
+                        </div>
+                        <div class="text-right">
+                            <span class="btn btn-info btn-sm btn-add-item"><i class="icon ion-ios-add-circle-outline"></i> {{__('Add item')}}</span>
+                        </div>
+                        <div class="g-more hide">
+                            <div class="item" data-number="__number__">
+                                <div class="row">
+                                    <div class="col-md-7">
+                                        @if(!empty($languages) && setting_item('site_enable_multi_lang') && setting_item('site_locale'))
+                                            @foreach($languages as $language)
+                                                <?php $key = setting_item('site_locale') != $language->locale ? "_".$language->locale : ""   ?>
+                                                <div class="g-lang"> 
+                                                    <div class="title-lang">{{$language->name}}</div>
+                                                    <input type="text" __name__="space_booking_seller_fees[__number__][name{{$key}}]" class="form-control" value="" placeholder="{{__('Fee name')}}">
+                                                    <input type="text" __name__="space_booking_seller_fees[__number__][desc{{$key}}]" class="form-control" value="" placeholder="{{__('Fee desc')}}">
+                                                </div>
+
+                                            @endforeach
+                                        @else
+                                            <input type="text" __name__="space_booking_seller_fees[__number__][name]" class="form-control" value="" placeholder="{{__('Fee name')}}">
+                                            <input type="text" __name__="space_booking_seller_fees[__number__][desc]" class="form-control" value="" placeholder="{{__('Fee desc')}}">
+                                        @endif
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="number" min="0" step="0.1"  __name__="space_booking_seller_fees[__number__][price]" class="form-control" value="">
+                                        <select __name__="space_booking_seller_fees[__number__][unit]" class="form-control">
+                                            <option value="fixed">{{ __("Fixed") }}</option>
+                                            <option value="percent">{{ __("Percent") }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 d-none">
+                                        <select __name__="space_booking_buyer_fees[__number__][type]" class="form-control d-none">
+                                            <option value="one_time">{{__("One-time")}}</option>
+                                        </select>
+                                        <label>
+                                            <input type="checkbox" min="0" __name__="space_booking_buyer_fees[__number__][per_person]" value="on">
+                                            {{__("Price per person")}}
+                                        </label>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <span class="btn btn-danger btn-sm btn-remove-item"><i class="fa fa-trash"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
+
+
+    <hr class="d-none">
+    <div class="row d-none">
+        <div class="col-sm-4">
+            <h3 class="form-group-title">{{__("Space Content")}}</h3>
+            <p class="form-group-desc">{{__('Config Space default Content')}}</p>
+        </div>
+        <div class="col-sm-8">
+            
+            <div class="panel">
+                <div class="panel-body">
+                    <div class="form-group-item">
+                        <label class="control-label">{{__('Default FAQs')}}</label>
+                        <div class="g-items-header">
+                            <div class="row">
+                                <div class="col-md-11">{{__("FAQ")}}</div>
+                                <div class="col-md-1"></div>
+                            </div> 
+                        </div>
+                        <div class="g-items">
+                            <?php  $languages = \Modules\Language\Models\Language::getActive();  ?>
+                            @if(!empty($settings['space_default_faqs']))
+                                <?php $space_default_faqs = json_decode($settings['space_default_faqs'],true); ?>
+                                @foreach($space_default_faqs as $key=>$space_default_faq)
+                                    <div class="item" data-number="{{$key}}">
+                                        <div class="row">
+                                            <div class="col-md-11">
+                                                @if(!empty($languages) && setting_item('site_enable_multi_lang') && setting_item('site_locale'))
+                                                    @foreach($languages as $language)
+                                                        <?php $key_lang = setting_item('site_locale') != $language->locale ? "_".$language->locale : ""   ?>
+                                                        <div class="g-lang">
+                                                            <div class="title-lang">{{$language->name}}</div>
+                                                            <input type="text" name="space_default_faqs[{{$key}}][title{{$key_lang}}]" class="form-control" value="{{$space_default_faq['title'.$key_lang] ?? ''}}" placeholder="{{__('Question')}}">
+                                                            <input type="text" name="space_default_faqs[{{$key}}][content{{$key_lang}}]" class="form-control" value="{{$space_default_faq['content'.$key_lang] ?? ''}}" placeholder="{{__('Answer')}}">
+                                                        </div>
+
+                                                    @endforeach
+                                                @else
+                                                    <input type="text" name="space_default_faqs[{{$key}}][title]" class="form-control" value="{{$space_default_faq['title'] ?? ''}}" placeholder="{{__('Question')}}">
+                                                    <input type="text" name="space_default_faqs[{{$key}}][content]" class="form-control" value="{{$space_default_faq['content'] ?? ''}}" placeholder="{{__('Answer')}}">
+                                                @endif
+                                            </div>
+                                            <div class="col-md-1">
+                                                <span class="btn btn-danger btn-sm btn-remove-item"><i class="fa fa-trash"></i></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @endif
+                        </div>
+                        <div class="text-right">
+                            <span class="btn btn-info btn-sm btn-add-item"><i class="icon ion-ios-add-circle-outline"></i> {{__('Add item')}}</span>
+                        </div>
+                        <div class="g-more hide">
+                            <div class="item" data-number="__number__">
+                                <div class="row">
+                                    <div class="col-md-11">
+                                        @if(!empty($languages) && setting_item('site_enable_multi_lang') && setting_item('site_locale'))
+                                            @foreach($languages as $language)
+                                                <?php $key = setting_item('site_locale') != $language->locale ? "_".$language->locale : ""   ?>
+                                                <div class="g-lang">
+                                                    <div class="title-lang">{{$language->name}}</div>
+                                                    <input type="text" __name__="space_default_faqs[__number__][title{{$key}}]" class="form-control" value="" placeholder="{{__('Question')}}">
+                                                    <input type="text" __name__="space_default_faqs[__number__][content{{$key}}]" class="form-control" value="" placeholder="{{__('Answer')}}">
+                                                </div>
+
+                                            @endforeach
+                                        @else
+                                            <input type="text" __name__="space_default_faqs[__number__][title]" class="form-control" value="" placeholder="{{__('Question')}}">
+                                            <input type="text" __name__="space_default_faqs[__number__][content]" class="form-control" value="" placeholder="{{__('Answer')}}">
+                                        @endif
+                                    </div>
+                                    <div class="col-md-1">
+                                        <span class="btn btn-danger btn-sm btn-remove-item"><i class="fa fa-trash"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-body">
+                    <div class="form-group-item">
+                        <label class="control-label">{{__('Default Terms of Service')}}</label>
+                        <div class="">
+                            <textarea name="space_default_terms" class="d-none has-ckeditor" cols="30" rows="10">{{$settings['space_default_terms']}}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-body">
+                    <div class="form-group-item">
+                        <label class="control-label">{{__('Default Privacy Policy')}}</label>
+                        <div class="">
+                            <textarea name="space_default_privacy_policy" class="d-none has-ckeditor" cols="30" rows="10">{{$settings['space_default_privacy_policy']}}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-body">
+                    <div class="form-group-item">
+                        <label class="control-label">{{__('Default House Rules')}}</label>
+                        <div class="">
+                            <textarea name="space_default_house_rules" class="d-none has-ckeditor" cols="30" rows="10">{{$settings['space_default_house_rules']}}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 @endif
 @if(is_default_lang())
     <hr>

@@ -2,6 +2,7 @@
 
 namespace Modules\Space\Controllers;
 
+use App\Helpers\CodeHelper;
 use App\Helpers\Constants;
 use ICal\ICal;
 use Illuminate\Http\Request;
@@ -13,6 +14,9 @@ use Modules\Space\Models\Space;
 use Modules\Space\Models\SpaceBlockTime;
 use Modules\Space\Models\SpaceDate;
 use Modules\User\Models\User;
+
+use Modules\Space\Models\PostalCodesAndTimeZone;
+use Modules\Space\Models\Timezones_Reference;
 
 class AvailabilityController extends FrontendController
 {
@@ -74,7 +78,8 @@ class AvailabilityController extends FrontendController
         $events = [];
         $id = $_GET['id'];
 
-        $bookings = Booking::whereIn('status', ['processing', 'partial_payment', ''])->where('object_model', 'space')->where('object_id', $id)->get();
+        $bookings = Booking::where('object_model', 'space')->where('object_id', $id)->get();
+        // $bookings = Booking::whereIn('status', [Booking::PROCESSING, Booking::PARTIAL_PAYMENT])->where('object_model', 'space')->where('object_id', $id)->get();
         if ($bookings != null) {
             foreach ($bookings as $booking) {
                 $customerName = '';
@@ -87,12 +92,17 @@ class AvailabilityController extends FrontendController
                     'start' => $booking->start_date,
                     'end' => $booking->end_date,
                     'classNames' => ['processing'],
-                    'url' => url('vendor/booking-report')
+                    'url' => url('user/booking-details/' . $booking->id)
                 ];
             }
         }
 
-        $bookings = Booking::where('status', 'confirmed')->where('object_model', 'space')->where('object_id', $id)->get();
+        $bookings = Booking::whereIn('status', [
+            Constants::BOOKING_STATUS_BOOKED,
+            Constants::BOOKING_STATUS_CHECKED_IN,
+            Constants::BOOKING_STATUS_CHECKED_OUT,
+            Constants::BOOKING_STATUS_COMPLETED
+        ])->where('object_model', 'space')->where('object_id', $id)->get();
         if ($bookings != null) {
             foreach ($bookings as $booking) {
                 $customerName = '';
@@ -105,7 +115,7 @@ class AvailabilityController extends FrontendController
                     'start' => $booking->start_date,
                     'end' => $booking->end_date,
                     'classNames' => ['confirmed'],
-                    'url' => url('vendor/booking-report')
+                    'url' => url('user/booking-details/' . $booking->id)
                 ];
             }
         }
@@ -118,6 +128,52 @@ class AvailabilityController extends FrontendController
                     'start' => $block->from,
                     'end' => $block->to,
                     'classNames' => ['blocked']
+                ];
+            }
+        }
+
+        return response()->json($events);
+    }
+
+
+    public function calendcalendarAppointmentsarEvents()
+    {
+        $events = [];
+
+        $userID = Auth::id();
+
+        $id = $_GET['id'];
+
+        if ($id != null) {
+
+            $bookings = Booking::where('object_model', 'space')->where(function ($query) use ($userID) {
+                $query->where('customer_id', $userID)->orWhere('vendor_id', $userID);
+            })->whereIn('status', [
+                Constants::BOOKING_STATUS_BOOKED,
+                Constants::BOOKING_STATUS_CHECKED_IN,
+                Constants::BOOKING_STATUS_CHECKED_OUT,
+                Constants::BOOKING_STATUS_COMPLETED
+            ])->where('object_id', $id)->get();
+        } else {
+            $bookings = Booking::where('object_model', 'space')->where(function ($query) use ($userID) {
+                $query->where('customer_id', $userID)->orWhere('vendor_id', $userID);
+            })->whereIn('status', [
+                Constants::BOOKING_STATUS_BOOKED,
+                Constants::BOOKING_STATUS_CHECKED_IN,
+                Constants::BOOKING_STATUS_CHECKED_OUT,
+                Constants::BOOKING_STATUS_COMPLETED
+            ])->get();
+        }
+
+
+        if ($bookings != null) {
+            foreach ($bookings as $booking) {
+                $events[] = [
+                    'title' => date('H:i', strtotime($booking->start_date)) . " - " . date('H:i', strtotime($booking->end_date)) . ': #' . $booking->id,
+                    'start' => $booking->start_date,
+                    'end' => $booking->end_date,
+                    'classNames' => ['processing'],
+                    'url' => url('user/booking-details/' . $booking->id)
                 ];
             }
         }
@@ -148,8 +204,7 @@ class AvailabilityController extends FrontendController
                         //get bookings between
                         $bookingBetween = Booking::whereRaw("`status` != 'draft' and `object_model` = 'space' and `object_id` = " . $id . " and ( (`start_date` BETWEEN '" . $startDateMain . "' and '" . $toDateMain . "') OR (`end_date` BETWEEN '" . $startDateMain . "' and '" . $toDateMain . "') OR ('$startDateMain' BETWEEN `start_date` and `end_date`) OR ('$toDateMain' BETWEEN `start_date` and `end_date`) )")->orderBy('start_date')->get();
                         if ($bookingBetween != null && count($bookingBetween) > 0) {
-                            foreach ($bookingBetween as $bookingRow) {
-                                {
+                            foreach ($bookingBetween as $bookingRow) { {
                                     $s = $bookingRow->start_date;
                                     $e = $bookingRow->end_date;
 
@@ -169,15 +224,13 @@ class AvailabilityController extends FrontendController
                                         'start' => $date . " " . $npStart . ":00",
                                         'end' => $date . " " . $npEnd . ":59",
                                     ];
-
                                 }
                             }
                         }
 
                         $blockedBetween = SpaceBlockTime::whereRaw("`bravo_space_id` = " . $id . " and ( (`from` BETWEEN '" . $startDateMain . "' and '" . $toDateMain . "') OR (`to` BETWEEN '" . $startDateMain . "' and '" . $toDateMain . "') OR ('$startDateMain' BETWEEN `from` and `to`) OR ('$toDateMain' BETWEEN `from` and `to`) )")->get();
                         if ($blockedBetween != null && count($blockedBetween) > 0) {
-                            foreach ($blockedBetween as $blockedRow) {
-                                {
+                            foreach ($blockedBetween as $blockedRow) { {
                                     $s = $blockedRow->from;
                                     $e = $blockedRow->to;
 
@@ -197,7 +250,6 @@ class AvailabilityController extends FrontendController
                                         'start' => $date . " " . $npStart . ":00",
                                         'end' => $date . " " . $npEnd . ":59",
                                     ];
-
                                 }
                             }
                         }
@@ -205,7 +257,6 @@ class AvailabilityController extends FrontendController
                         // print_r($datesNotAvailable);
 
                     }
-
                 }
             }
         }
@@ -257,9 +308,17 @@ class AvailabilityController extends FrontendController
 
     public function verifySelectedTimes()
     {
-        $response = ['status' => 'error', 'message' => 'Failed to check availability'];
+        $response = [
+            'status' => 'error',
+            'message' => 'Failed to check availability',
+            'price' => 0,
+            'start_time' => null,
+            'end_time' => null
+        ];
 
         $id = isset($_POST['id']) ? trim($_POST['id']) : null;
+        $bookingId = isset($_POST['bookingId']) ? trim($_POST['bookingId']) : null;
+
         if ($id != null) {
             $start_date = isset($_POST['start_date']) ? trim($_POST['start_date']) : null;
             $end_date = isset($_POST['end_date']) ? trim($_POST['end_date']) : null;
@@ -268,167 +327,238 @@ class AvailabilityController extends FrontendController
             $startHour = isset($_POST['start_hour']) ? trim($_POST['start_hour']) : null;
             $endHour = isset($_POST['end_hour']) ? trim($_POST['end_hour']) : null;
 
+            $start_dateTemp = explode('/', $start_date);
+            $start_dateTemp = $start_dateTemp[2] . "-" . $start_dateTemp[0] . "-" . $start_dateTemp[1];
+            $end_dateTemp = explode('/', $end_date);
+            $end_dateTemp = $end_dateTemp[2] . "-" . $end_dateTemp[0] . "-" . $end_dateTemp[1];
+
+            $start_dateTemp = $start_dateTemp . " " . $startHour . ":00";
+            $end_dateTemp = $end_dateTemp . " " . $endHour . ":00";
+
+            $totalHoursTemp = CodeHelper::getHoursBetweenDates($start_dateTemp, $end_dateTemp);
+
+            $response['total_hours'] = $totalHoursTemp;
+
             $space = Space::where('id', $id)->first();
             if ($space != null) {
-                $response['space_title'] = $space->title;
 
-                if ($start_date != null && $end_date != null) {
+                $process = true;
 
-                    $start_hour_state = date("A", strtotime($startHour));
-                    $end_hour_state = date("A", strtotime($endHour));
+                if ($bookingId != null) {
+                    $booking = Booking::where('id', $bookingId)->first();
+                    if ($booking != null) {
 
-                    //if ($start_hour_state == $start_ampm && $end_hour_state == $end_ampm) {
-                    if (true) {
+                        if ($booking->start_date == $start_dateTemp && $booking->end_date == $end_dateTemp) {
+                            $process = false;
+                            $response['status'] = 'success';
+                            $response['message'] = 'No Changes';
 
-                        $start_date = explode('/', $start_date);
-                        $start_date = $start_date[2] . "-" . $start_date[0] . "-" . $start_date[1];
-                        $end_date = explode('/', $end_date);
-                        $end_date = $end_date[2] . "-" . $end_date[0] . "-" . $end_date[1];
-
-                        $startDateMain = $start_date . " 00:00:01";
-                        $toDateMain = $end_date . " 23:59:59";
-
-                        if ($startHour != null && $endHour != null) {
-
-                            if ($space->long_term_rental == 1) {
-                                $startHour = $space->available_from;
-                                $endHour = $space->available_to;
-                            }
-
-                            //$startDate = $start_date . " " . $startHour . ":01 " . $start_ampm;
-                            $startDate = $start_date . " " . $startHour . ":01 ";
-                            $startDate = date('Y-m-d H:i:s', strtotime($startDate));
-
-                            //$toDate = $end_date . " " . $endHour . ":00 " . $end_ampm;
-                            $toDate = $end_date . " " . $endHour . ":00 ";
-                            $toDate = date('Y-m-d H:i:s', (strtotime($toDate) - 1));
-
-                            if ($toDate > $startDate) {
-
-                                $startHourOnly = date('H', strtotime($startDate));
-                                $endHourOnly = date('H', strtotime($toDate));
-
-                                if ($start_date < $end_date) {
-                                    $differenceHours = 24;
-                                } else {
-                                    //$differenceHours = ($endHourExploded[0] * 1) - ($startHourExploded[0] * 1);
-                                    $differenceHours = ($endHourOnly) - ($startHourOnly);
-                                    $response['difference_hours'] = $differenceHours;
-                                }
-
-                                if ($space->min_hour_stays == null) {
-                                    $space->min_hour_stays = 0;
-                                }
-
-                                if ($differenceHours >= $space->min_hour_stays) {
-
-                                    $response['date_range'] = $startDateMain . " -> " . $toDateMain;
-                                    $response['bookings'] = [];
-                                    $bookingBetween = Booking::whereRaw("(`status` != 'complete' OR `status` != 'paid') and `object_model` = 'space' and `object_id` = " . $id . " and ( (`start_date` BETWEEN '" . $startDateMain . "' and '" . $toDateMain . "') OR (`end_date` BETWEEN '" . $startDateMain . "' and '" . $toDateMain . "') OR ('$startDateMain' BETWEEN `start_date` and `end_date`) OR ('$toDateMain' BETWEEN `start_date` and `end_date`) )")->orderBy('start_date')->get();
-                                    if ($bookingBetween != null && count($bookingBetween) > 0) {
-                                        foreach ($bookingBetween as $bookingBet) {
-                                            $bookInfo = date('d M H:i', strtotime($bookingBet->start_date)) . " - " . date('d M H:i', strtotime($bookingBet->end_date));
-                                            $response['bookings'][] = $bookInfo;
-                                        }
-
-
-                                        if ($startHour != null && $endHour != null) {
-                                            if ($toDate > $startDate) {
-                                                $response['date_range_nxt'] = $startDate . " -> " . $toDate;
-
-                                                $bookingBetween = Booking::whereRaw("(`status` != 'complete' OR `status` != 'paid') and `object_model` = 'space' and `object_id` = " . $id . "
-                                            and ( (`start_date` BETWEEN '" . $startDate . "' and '" . $toDate . "')
-                                            OR (`end_date` BETWEEN '" . $startDate . "' and '" . $toDate . "')
-                                            OR ('$startDate' BETWEEN `start_date` and `end_date`)
-                                            OR ('$toDate' BETWEEN `start_date` and `end_date`) )")->get();
-
-                                                if ($bookingBetween != null && count($bookingBetween) > 0) {
-                                                    $response['status'] = 'error';
-                                                    $response['message'] = 'Timings not available';
-                                                } else {
-                                                    $response['status'] = 'success';
-                                                    $response['step'] = '0x0';
-                                                    $response['message'] = 'Successfully checked the availability';
-                                                }
-                                            } else {
-                                                $response['status'] = 'error';
-                                                $response['message'] = 'To date should be greater than from date';
-                                            }
-
-                                        } else {
-                                            $response['status'] = 'pending';
-                                            $response['step'] = '0x1';
-                                        }
-                                    } else {
-                                        if ($startHour != null && $endHour != null) {
-                                            $response['status'] = 'success';
-                                            $response['message'] = 'Successfully checked the availability';
-                                            $response['step'] = '0x2';
-                                        } else {
-                                            $response['status'] = 'pending';
-                                        }
-                                    }
-
-                                    //check if hour are out then decided
-                                    if ($space->available_from != null && $space->available_to != null) {
-                                        $availableFrom = $space->available_from;
-                                        $availableTo = $space->available_to;
-                                        /* var_dump($availableFrom." -> ".$startHour);
-                                         var_dump($availableTo." -> ".$endHour);
-                                         var_dump(($startHour < $availableFrom));
-                                         var_dump(($endHour > $availableTo));die;*/
-                                        if (($startHour < $availableFrom) || ($startHour > $availableTo) || ($endHour < $availableFrom) || ($endHour > $availableTo)) {
-                                            $response['status'] = 'error';
-                                            $response['message'] = 'Space is only available from ' . $availableFrom . "-" . $availableTo;
-                                        }
-                                    }
-
-
-                                    //block dates
-                                    $response['date_range_block'] = $startDateMain . " -> " . $toDateMain;
-
-                                    $blockedBetween = SpaceBlockTime::whereRaw("`bravo_space_id` = " . $id . " and ( (`from` BETWEEN '" . $startDateMain . "' and '" . $toDateMain . "') OR (`to` BETWEEN '" . $startDateMain . "' and '" . $toDateMain . "') OR ('$startDateMain' BETWEEN `from` and `to`) OR ('$toDateMain' BETWEEN `from` and `to`) )")->get();
-                                    if ($blockedBetween != null && count($blockedBetween) > 0) {
-                                        foreach ($blockedBetween as $blockBetween) {
-                                            $bookInfo = date('d M H:i', strtotime($blockBetween->from)) . " - " . date('d M H:i', strtotime($blockBetween->to));
-                                            $response['bookings'][] = $bookInfo;
-                                        }
-                                    }
-
-                                    if ($response['status'] == 'success') {
-                                        //check in blocked dates
-                                        if ($startHour != null && $endHour != null) {
-                                            $response['date_range_block_nxt'] = $startDate . " -> " . $toDate;
-                                            $blockedBetween = SpaceBlockTime::whereRaw("`bravo_space_id` = " . $id . " and ( (`from` BETWEEN '" . $startDate . "' and '" . $toDate . "') OR (`to` BETWEEN '" . $startDate . "' and '" . $toDate . "') OR ('$startDate' BETWEEN `from` and `to`) OR ('$toDate' BETWEEN `from` and `to`) )")->get();
-                                            if ($blockedBetween != null && count($blockedBetween) > 0) {
-                                                $response['status'] = 'error';
-                                                $response['message'] = 'Timings not available';
-                                            }
-                                        }
-                                    }
-
-                                } else {
-                                    $response['status'] = 'error';
-                                    $response['message'] = 'Minimum Stay should be equal or greater than ' . $space->min_hour_stays . ' hours.';
-                                }
-
-                            } else {
-                                $response['status'] = 'error';
-                                $response['message'] = 'To date should be greater than from date.';
-                            }
-                        } else {
-                            $response['status'] = 'pending';
-                            $response['step'] = '0x3';
+                            $response['price'] = $booking->total_before_fees;
+                            $response['priceFormatted'] = CodeHelper::formatPrice($booking->total_before_fees);
                         }
                     } else {
+                        $process = false;
                         $response['status'] = 'error';
-                        $response['message'] = 'Time State is incorrect';
+                        $response['message'] = 'Booking not found';
+                    }
+                } else {
+                    $bookingId = -1;
+                }
+
+                $response['space_title'] = $space->title;
+
+                if ($process) {
+
+                    if ($start_date != null && $end_date != null) {
+
+                        $start_hour_state = date("A", strtotime($startHour));
+                        $end_hour_state = date("A", strtotime($endHour));
+
+                        //if ($start_hour_state == $start_ampm && $end_hour_state == $end_ampm) {
+                        if (true) {
+
+                            $start_date = explode('/', $start_date);
+                            $start_date = $start_date[2] . "-" . $start_date[0] . "-" . $start_date[1];
+                            $end_date = explode('/', $end_date);
+                            $end_date = $end_date[2] . "-" . $end_date[0] . "-" . $end_date[1];
+
+                            $startDateMain = $start_date . " 00:00:01";
+                            $toDateMain = $end_date . " 23:59:59";
+
+                            if ($startHour != null && $endHour != null) {
+
+                                if ($space->long_term_rental == 1) {
+                                    // $startHour = $space->available_from;
+                                    // $endHour = $space->available_to;
+                                }
+
+                                //$startDate = $start_date . " " . $startHour . ":01 " . $start_ampm;
+                                $startDate = $start_date . " " . $startHour . ":01 ";
+                                $startDate = date('Y-m-d H:i:s', strtotime($startDate));
+
+                                //$toDate = $end_date . " " . $endHour . ":00 " . $end_ampm;
+                                $toDate = $end_date . " " . $endHour . ":00 ";
+                                $toDate = date('Y-m-d H:i:s', (strtotime($toDate) - 0));
+
+                                $nowDateTime = date('Y-m-d H:i:s');
+
+                                $zipcode = $space->zip;
+                                $city = $space->city;
+                                $state = $space->state;
+                                $country = $space->country;
+                                $postalcodedata = PostalCodesAndTimeZone::Where('province_abbr', $state)->orWhere('postalcode', $zipcode)->orWhere('city', strtoupper($city))->first();
+                                if (!empty($postalcodedata)) {
+                                    $timezonecode = $postalcodedata->timezone;
+                                    $timezonedata = Timezones_Reference::where('id', $timezonecode)->first();
+                                    $timezone = $timezonedata->php_time_zones;
+                                } else {
+                                    $timezone = "Canada/Eastern";
+                                }
+                                $nowDateTime = $systemdate = \Carbon\Carbon::now()->tz($timezone);
+
+                                //$nowDateTime=\Carbon\Carbon::now()->tz($timezone);
+                                // $nowDateTime = date('Y-m-d H:i:s');
+
+                                if ($startDate >= $nowDateTime) {
+
+                                    if ($toDate > $startDate) {
+
+                                        $response['start_time'] = $startDate;
+                                        $response['end_time'] = $toDate;
+
+                                        $startHourOnly = date('H', strtotime($startDate));
+                                        $endHourOnly = date('H', strtotime($toDate));
+
+                                        if ($start_date < $end_date) {
+                                            $differenceHours = 24;
+                                        } else {
+                                            //$differenceHours = ($endHourExploded[0] * 1) - ($startHourExploded[0] * 1);
+                                            $differenceHours = ($endHourOnly) - ($startHourOnly);
+                                            $response['difference_hours'] = $differenceHours;
+                                        }
+
+                                        if ($space->min_hour_stays == null) {
+                                            $space->min_hour_stays = 0;
+                                        }
+
+                                        if ($differenceHours >= $space->min_hour_stays) {
+
+                                            $toDate = date('Y-m-d H:i:s', (strtotime($toDate) - 1));
+
+                                            $response['date_range'] = $startDateMain . " -> " . $toDateMain;
+                                            $response['bookings'] = [];
+                                            $bookingBetween = Booking::whereRaw("(`status` != 'complete' OR `status` != 'paid') and `object_model` = 'space' and `id` != " . $bookingId . " and `object_id` = " . $id . " and ( (`start_date` BETWEEN '" . $startDateMain . "' and '" . $toDateMain . "') OR (`end_date` BETWEEN '" . $startDateMain . "' and '" . $toDateMain . "') OR ('$startDateMain' BETWEEN `start_date` and `end_date`) OR ('$toDateMain' BETWEEN `start_date` and `end_date`) )")->orderBy('start_date')->get();
+                                            if ($bookingBetween != null && count($bookingBetween) > 0) {
+                                                foreach ($bookingBetween as $bookingBet) {
+                                                    $bookInfo = date('d M H:i', strtotime($bookingBet->start_date)) . " - " . date('d M H:i', strtotime($bookingBet->end_date));
+                                                    $response['bookings'][] = $bookInfo;
+                                                }
+
+
+                                                if ($startHour != null && $endHour != null) {
+                                                    if ($toDate > $startDate) {
+                                                        $response['date_range_nxt'] = $startDate . " -> " . $toDate;
+
+                                                        $bookingBetween = Booking::whereRaw("(`status` != 'complete' OR `status` != 'paid') and `object_model` = 'space' and `id` != " . $bookingId . " and `object_id` = " . $id . "
+                                                and ( (`start_date` BETWEEN '" . $startDate . "' and '" . $toDate . "')
+                                                OR (`end_date` BETWEEN '" . $startDate . "' and '" . $toDate . "')
+                                                OR ('$startDate' BETWEEN `start_date` and `end_date`)  
+                                                OR ('$toDate' BETWEEN `start_date` and `end_date`) )")->get();
+
+                                                        if ($bookingBetween != null && count($bookingBetween) > 0) {
+                                                            $response['status'] = 'error';
+                                                            $response['message'] = 'Timings not available';
+                                                        } else {
+                                                            $response['status'] = 'success';
+                                                            $response['step'] = '0x0';
+                                                            $response['message'] = 'Successfully checked the availability';
+                                                        }
+                                                    } else {
+                                                        $response['status'] = 'error';
+                                                        $response['message'] = 'To date should be greater than from date';
+                                                    }
+                                                } else {
+                                                    $response['status'] = 'pending';
+                                                    $response['step'] = '0x1';
+                                                }
+                                            } else {
+                                                if ($startHour != null && $endHour != null) {
+                                                    $response['status'] = 'success';
+                                                    $response['message'] = 'Successfully checked the availability';
+                                                    $response['step'] = '0x2';
+                                                } else {
+                                                    $response['status'] = 'pending';
+                                                }
+                                            }
+
+                                            //check if hour are out then decided
+                                            if ($space->available_from != null && $space->available_to != null) {
+                                                $availableFrom = $space->available_from;
+                                                $availableTo = $space->available_to;
+                                                /* var_dump($availableFrom." -> ".$startHour);
+                                             var_dump($availableTo." -> ".$endHour);
+                                             var_dump(($startHour < $availableFrom));
+                                             var_dump(($endHour > $availableTo));die;*/
+                                                if (($startHour < $availableFrom) || ($startHour > $availableTo) || ($endHour < $availableFrom) || ($endHour > $availableTo)) {
+                                                    $response['status'] = 'error';
+                                                    $response['message'] = 'Space is only available from ' . $availableFrom . "-" . $availableTo;
+                                                }
+                                            }
+
+
+                                            //block dates
+                                            $response['date_range_block'] = $startDateMain . " -> " . $toDateMain;
+
+                                            $blockedBetween = SpaceBlockTime::whereRaw("`bravo_space_id` = " . $id . " and ( (`from` BETWEEN '" . $startDateMain . "' and '" . $toDateMain . "') OR (`to` BETWEEN '" . $startDateMain . "' and '" . $toDateMain . "') OR ('$startDateMain' BETWEEN `from` and `to`) OR ('$toDateMain' BETWEEN `from` and `to`) )")->get();
+                                            if ($blockedBetween != null && count($blockedBetween) > 0) {
+                                                foreach ($blockedBetween as $blockBetween) {
+                                                    $bookInfo = date('d M H:i', strtotime($blockBetween->from)) . " - " . date('d M H:i', strtotime($blockBetween->to));
+                                                    $response['bookings'][] = $bookInfo;
+                                                }
+                                            }
+
+                                            if ($response['status'] == 'success') {
+                                                //check in blocked dates
+                                                if ($startHour != null && $endHour != null) {
+                                                    $response['date_range_block_nxt'] = $startDate . " -> " . $toDate;
+                                                    $blockedBetween = SpaceBlockTime::whereRaw("`bravo_space_id` = " . $id . " and ( (`from` BETWEEN '" . $startDate . "' and '" . $toDate . "') OR (`to` BETWEEN '" . $startDate . "' and '" . $toDate . "') OR ('$startDate' BETWEEN `from` and `to`) OR ('$toDate' BETWEEN `from` and `to`) )")->get();
+                                                    if ($blockedBetween != null && count($blockedBetween) > 0) {
+                                                        $response['status'] = 'error';
+                                                        $response['message'] = 'Timings not available';
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            $response['status'] = 'error';
+                                            $response['message'] = 'Minimum Stay should be equal or greater than ' . $space->min_hour_stays . ' hours.';
+                                        }
+                                    } else {
+                                        $response['status'] = 'error';
+                                        $response['message'] = 'To date should be greater than from date.';
+                                    }
+                                } else {
+                                    $response['status'] = 'error';
+                                    $response['message'] = 'Start Date should not be less than now.';
+                                }
+                            } else {
+                                $response['status'] = 'pending';
+                                $response['step'] = '0x3';
+                            }
+                        } else {
+                            $response['status'] = 'error';
+                            $response['message'] = 'Time State is incorrect';
+                        }
                     }
 
+                    $priceInfo = CodeHelper::getSpacePrice($space, $response['start_time'], $response['end_time']);
 
+                    $response['priceInfo'] = $priceInfo;
+                    $response['price'] = $priceInfo['price'];
+                    $response['priceFormatted'] = CodeHelper::formatPrice($response['price']);
                 }
             }
         }
+
         return response()->json($response);
     }
 
@@ -588,8 +718,8 @@ class AvailabilityController extends FrontendController
         }
 
         $postData = $request->input();
-//        for($i = strtotime($request->input('start_date')); $i <= strtotime($request->input('end_date')); $i+= DAY_IN_SECONDS)
-//        {
+        //        for($i = strtotime($request->input('start_date')); $i <= strtotime($request->input('end_date')); $i+= DAY_IN_SECONDS)
+        //        {
         $period = periodDate($request->input('start_date'), $request->input('end_date'));
         foreach ($period as $dt) {
             $date = $this->spaceDateClass::where('start_date', $dt->format('Y-m-d'))->where('target_id', $target_id)->first();
@@ -604,15 +734,14 @@ class AvailabilityController extends FrontendController
 
             $date->fillByAttr([
                 'start_date', 'end_date', 'price',
-//                'max_guests','min_guests',
+                //                'max_guests','min_guests',
                 'is_instant', 'active',
-//                'enable_person','person_types'
+                //                'enable_person','person_types'
             ], $postData);
 
             $date->save();
         }
 
         return $this->sendSuccess([], __("Update Success"));
-
     }
 }

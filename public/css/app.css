@@ -424,9 +424,9 @@ input[type=radio]:checked:before {
     text-indent: -9999px;
     border-radius: 50px;
     font-size: 24px;
-    width: 6px;
+    /* width: 6px;
     height: 6px;
-    margin: 4px;
+    margin: 4px; */
     line-height: 16px;
     background-color: #1e8cbe
 }
@@ -748,11 +748,11 @@ body .daterangepicker .drp-calendar .calendar-table .next:hover, body .daterange
 }
 
 body .daterangepicker .drp-calendar .calendar-table .prev {
-    background: url(/images/arow_left.png?a81887014623d5a1e5955be94a3576b1) no-repeat 50%
+    background: url(http://ss22001.mybackpocket.co/images/arow_left.png?a81887014623d5a1e5955be94a3576b1) no-repeat 50%
 }
 
 body .daterangepicker .drp-calendar .calendar-table .next {
-    background: url(/images/arrow_right.png?9f972f18a6ed4e7062b721bc9f76547d) no-repeat 50%
+    background: url(http://ss22001.mybackpocket.co/images/arrow_right.png?9f972f18a6ed4e7062b721bc9f76547d) no-repeat 50%
 }
 
 body .daterangepicker .drp-calendar .calendar-table thead {
@@ -3587,7 +3587,7 @@ body .daterangepicker .tooltip .tooltip-inner {
     top: -25px;
     color: #fff;
     font-size: 15px;
-    background-color: #ffc107;
+    background-color: #ed0925;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -8208,3 +8208,80 @@ ol, ul {
     height: 10vh;
     border: 3px dashed grey
 }
+.booking-review .booking-review-content .review-section .service-info img {
+    width: 100%;
+  }
+  .booking-review .booking-review-content .review-section {
+    padding: 12px 25px 0 24px !important;
+    border-bottom: unset !important; 
+  }
+
+  .service-name-booking-text{
+    color: #1a2b48;
+    font-size: 16px;
+    line-height: 25px;
+    font-weight: bold;
+    font-family: WorkSans;
+
+  }
+  .booking-detail .review-list .booking-table-listing, .bravo-booking-page .review-list .booking-table-listing{
+    width: 100%;
+  }
+  .booking-detail .review-list .booking-table-listing thead,.bravo-booking-page .review-list .booking-table-listing thead{
+    background-color: #ffc435;
+    border:1px solid #9fa7ae;  
+  }
+
+ .bravo-booking-page .review-list .booking-table-listing td{
+    text-align: right;
+    padding: 4px 19px 4px 23px;
+    font-size: 12px;
+    color: #5e6d77;
+    font-family: Roboto;
+  }
+
+
+  .bravo-booking-page .review-list .booking-table-listing th {
+    text-align: right;
+    font-size: 12px;
+    font-family: Roboto;
+    padding: 2px 22px 0px 9px;
+    line-height: 26px;
+  }
+ .booking-detail .review-list .booking-table-listing i, .bravo-booking-page .review-list .booking-table-listing i{
+    float: right;
+    padding-top: 4px;
+  }
+  .booking-review .booking-review-content .review-list li {
+    padding-right: 20px;
+  }
+  .review-list .section-coupon-form .btn{
+    background: #ffc435;
+    color: #000;
+    font-weight: 800;
+    height: 32px;
+    padding: 6px 12px 4px 15px;
+    text-transform: uppercase;
+    border: 1px solid #9fa7ae;
+  }
+  .review-list .section-coupon-form .input-group input{
+    margin-right: 10px;
+    border: 1px solid #9fa7ae;
+    height: 32px;
+    flex: unset;
+    width: 120px;
+  }
+
+  .booking-detail .booking-review-content .review-list .label ,.bravo-booking-page .booking-review-content .review-list .label{
+   color: #000;
+   font-size:100%;
+   font-weight: normal;
+   font-family: Roboto;
+  }
+  .booking-detail .review-list table .grand-total,.bravo-booking-page .review-list table .grand-total{
+    font-weight: 800;
+    width: 100%;
+  }
+
+
+

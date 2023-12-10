@@ -4,7 +4,7 @@
 @endphp
 
 @if(!empty($languages) && setting_item('site_enable_multi_lang') && setting_item('site_locale'))
-    <div class="language-navigation" id="language-navs" >
+    <div class="language-navigation d-none" id="language-navs" >
         <ul class="nav nav-tabs" role="tablist" >
             @foreach($languages as $language)
                 <li class="nav-item">

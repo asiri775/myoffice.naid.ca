@@ -50,6 +50,7 @@ jQuery(function ($) {
 	})
 
 	function reloadForm(){
+		console.log("fsdfsdfsd");
 		$('.map_loading').show();
 		$.ajax({
 			data:$('.bravo_form_search_map input,select,textarea,input:hidden,#advance_filters input,select,textarea').serialize()+'&_ajax=1',

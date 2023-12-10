@@ -25,7 +25,6 @@ class NotificationToAdmin extends Mailable
 
     public function build()
     {
-
         return $this->subject(__('[:site_name] New message',['site_name'=>setting_item('site_title')]))->view('Contact::emails.notification')->with([
             'contact' => $this->contact,
         ]);

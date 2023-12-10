@@ -43,11 +43,11 @@
                         <div class="left text-center ml-2">
                             <span class="head-rating">
                                 <?php
-                                $reviewData = $row->getScoreReview();
-                                $score_total = $reviewData['score_total'];
+                                // $reviewData = $row->getScoreReview();
+                                // $score_total = $reviewData['score_total'];
                                 ?>
                                 <div class="star-rate">
-                                    @for ($number = 1; $number <= $reviewData['score_total']; $number++)
+                                    @for ($number = 1; $number <= $review_score['score_total']; $number++)
                                         <i class="fa fa-star"></i>
                                     @endfor
                                 </div>

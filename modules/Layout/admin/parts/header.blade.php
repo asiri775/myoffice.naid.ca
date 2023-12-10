@@ -29,7 +29,7 @@ $locale = App::getLocale();
     </div>
     <div class="widgets-right flex-shrink-0 d-flex">
         @if(!empty($languages) and is_enable_multi_lang())
-        <div class="dropdown header-widget widget-user widget-language flex-shrink-0">
+        <div class="dropdown header-widget widget-user widget-language flex-shrink-0 d-none">
             <div data-toggle="dropdown" class="user-dropdown d-flex align-items-center" aria-haspopup="true" aria-expanded="false">
                 @foreach($languages as $language)
                     @if($locale == $language->locale)

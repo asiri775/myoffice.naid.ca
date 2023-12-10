@@ -50,7 +50,7 @@ class FlightController extends Controller
                     "lng"     => (float)$row->map_lng,
                     "gallery" => $row->getGallery(true),
                     "infobox" => view('Flight::frontend.layouts.search.loop-grid', ['row' => $row,'disable_lazyload'=>1,'wrap_class'=>'infobox-item'])->render(),
-                    'marker' => get_file_url(setting_item("flight_icon_marker_map"),'full') ?? url('images/icons/png/pin.png'),
+                    'marker' => get_file_url(setting_item("flight_icon_marker_map"),'full') ?? url('images/myoffice-marker-1.png'),
                 ];
             }
         }

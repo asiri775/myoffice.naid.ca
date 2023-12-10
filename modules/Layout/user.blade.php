@@ -13,7 +13,7 @@
     <link href="{{ asset('libs/ionicons/css/ionicons.min.css') }}" rel="stylesheet">
     <link href="{{ asset('libs/icofont/icofont.min.css') }}" rel="stylesheet">
     <link href="{{ asset('dist/frontend/css/notification.css') }}" rel="newest stylesheet">
-
+ 
     <link rel="stylesheet" href="{{ asset('fullcalendar/main.css') }}">
     <link rel="stylesheet" href="{{ asset('datetimepicker/jquery.datetimepicker.min.css') }}">
 

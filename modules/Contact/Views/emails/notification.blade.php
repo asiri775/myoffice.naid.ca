@@ -10,12 +10,12 @@
                 <div class="b-table-wrap">
                     <table class="b-table" cellspacing="0" cellpadding="0">
                         <tr class="info-first-name">
-                            <td class="label">{{__('Name')}}</td>
-                            <td class="val">{{$contact->name}}</td>
+                            <td class="label">{{__('Topic')}}</td>
+                            <td class="val">{{$contact->topic}}</td>
                         </tr>
                         <tr class="info-first-name">
-                            <td class="label">{{__('Email')}}</td>
-                            <td class="val">{{$contact->email}}</td>
+                            <td class="label">{{__('Subject')}}</td>
+                            <td class="val">{{$contact->subject}}</td>
                         </tr>
                         <tr class="info-first-name">
                             <td class="label">{{__('Message')}}</td>

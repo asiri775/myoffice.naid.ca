@@ -2,6 +2,7 @@
 
 use Modules\Core\Models\Settings;
 use App\Currency;
+use App\Helpers\CodeHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 
@@ -198,6 +199,11 @@ function get_date_format()
     return setting_item('date_format', 'm/d/Y');
 }
 
+function get_string_month_format()
+{
+    return setting_item('date_format', 'm/d/Y');
+}
+
 function get_moment_date_format()
 {
     return php_to_moment_format(get_date_format());
@@ -251,20 +257,9 @@ function php_to_moment_format($format)
 
 function display_date($time)
 {
+    return CodeHelper::formatDateTime($time);
 
-    if ($time) {
-        if (is_string($time)) {
-            $time = strtotime($time);
-        }
-
-        if (is_object($time)) {
-            return $time->format(get_date_format());
-        }
-    } else {
-        $time = strtotime(today());
-    }
-
-    return date("M d | h:i A", $time);
+    
 }
 
 
@@ -301,6 +296,20 @@ function display_datetime_custom($time)
     $date .=  date('h:i a', strtotime($time));
     return $date;
 }
+
+function string_month_custom($val){
+    return \Carbon\Carbon::parse($val)->format('F d, Y');
+}
+
+function display_string_month_custom($time)
+{
+    // $date =  date(get_string_month_format() , strtotime($time));
+    $date = string_month_custom($time);
+    $date .= ' | ';
+    $date .=  date('h:i A', strtotime($time));
+    return $date;
+}
+
 function dateFormat($time)
 {
     $time = strtotime($time);
@@ -701,6 +710,7 @@ function get_payment_gateway_obj($payment_gateway)
     }
 
     $gatewayObj = new $gateways[$payment_gateway]($payment_gateway);
+    
 
     return $gatewayObj;
 
@@ -909,6 +919,11 @@ function get_payment_gateways()
             }
         }
     }
+
+    if(is_array($gateways) && array_key_exists('offline_payment', $gateways)){
+        unset($gateways['offline_payment']);
+    }
+
     return $gateways;
 }
 
@@ -1270,5 +1285,5 @@ function generate_timezone_list()
         $timezone_list[$timezone] = "$timezone (${pretty_offset})";
     }
 
-    return $timezone_list; 
+    return $timezone_list;
 }

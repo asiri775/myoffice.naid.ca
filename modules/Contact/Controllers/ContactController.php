@@ -53,7 +53,7 @@ class ContactController extends Controller
         $row = new Contact($request->input());
         $row->status = 'sent';
         if ($row->save()) {
-            $this->sendEmail($row);
+            $this->sendEmail($row); 
             $data = [
                 'status'    => 1,
                 'message'    => __('Thank you for contacting us! We will get back to you soon'),

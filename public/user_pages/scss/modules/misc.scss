@@ -481,11 +481,11 @@
 
 // Dashboard widget heights
 
-.sm-gutter .row > [class^="col-"],
-.sm-gutter .row > [class*="col-"] {
+.sm-gutter .row > [class^="col"],
+.sm-gutter .row > [class*="col"] {
   @include padding-left( $layout-gutter-sm );
   @include padding-right( $layout-gutter-sm );
-}
+}  
 .sm-gutter .row {
   @include margin-left( -$layout-gutter-sm );
   @include margin-right( -$layout-gutter-sm );

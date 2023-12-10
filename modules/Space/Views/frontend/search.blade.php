@@ -1,37 +1,38 @@
-@extends('layouts.app')
-@section('head')
-    <link href="{{ asset('dist/frontend/module/space/css/space.css?_ver='.config('app.version')) }}" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="{{ asset("libs/ion_rangeslider/css/ion.rangeSlider.min.css") }}"/>
-@endsection
-@section('content')
-    <div class="bravo_search_space">
-        <div class="bravo_banner" @if($bg = setting_item("space_page_search_banner")) style="background-image: url({{get_file_url($bg,'full')}})" @endif >
-            <div class="container">
-                <h1>
-                    {{setting_item_with_lang("space_page_search_title")}}
-                </h1>
-            </div>
-        </div>
-        <div class="bravo_form_search">
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-12 col-md-12">
-                        @if(request()->route()->getName() == 'home')
-                           @include('Space::frontend.layouts.search-home.form-search')
-                        @else
-                           @include('Space::frontend.layouts.search.form-search')
-                        @endif
+@extends('layouts.common_space')
 
+@section('content') 
+
+    <div class="layout1 bravo_wrap">
+        <div class="bravo_search_tour bravo_search_space">
+            <h1 class="d-none">
+                {{setting_item_with_lang("space_page_search_title")}}
+            </h1>
+            <div class="bravo_form_search_map"> 
+                @include('Space::frontend.layouts.search-map.form-search-map')
+            </div>
+            <div class="bravo_search_map {{ setting_item_with_lang("space_layout_map_option",false,"map_left") }}">
+                <div class="results_item">
+                    @include('Space::frontend.layouts.search-map.advance-filter')
+                    <div class="listing_items">
+                        @include('Space::frontend.layouts.search-map.list-item')
                     </div>
                 </div>
             </div>
         </div>
-        <div class="container">
-            @include('Space::frontend.layouts.search.list-item')
+
+        <div sty class="container-fluid footer">
+            <div class="copyright sm-text-center">
+                <p class="small-text text-black m-0">
+                    Copyright © {{date('Y')}} {{env('APP_NAME')}}. All Rights Reserved.
+                </p>
+                <div class="clearfix"></div>
+            </div>
         </div>
+
+        <!-- Booking ends -->
+        <div class="clearfix"></div>
+
     </div>
-@endsection
-@section('footer')
-    <script type="text/javascript" src="{{ asset("libs/ion_rangeslider/js/ion.rangeSlider.min.js") }}"></script>
-    <script type="text/javascript" src="{{ asset('module/space/js/space.js?_ver='.config('app.version')) }}"></script>
+
+
 @endsection

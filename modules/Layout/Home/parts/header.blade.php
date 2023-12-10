@@ -25,13 +25,25 @@ $countUnread = $checkNotify->where('read_at', null)->count();
     }
 </style>
 <div class="indexheaderwrper innerheader whitebg">
-    <div class="container-fluid">
+    <div class="container-fluid header-menu-web">
         <div class="indexlogo pull-left ">
             <a href="{{ route('home') }}" class="fulwidthm left"><img src="{{ asset('images/logo_myoffice.png') }}"
                     alt="MyOffice Logo" title="MyOffice"></a>
         </div>
-        <div class="responsivehomebtn">
+        <div class="responsivehomebtn"> 
             <i class="fa fa-bars"></i>
+        </div>
+        <div id="topHeadSearch">
+            <form method="get" action="{{ route('space.search') }}">
+                <input type="hidden" class="check-in-input" value="<?=date('m/d/Y')?>" name="start">
+                <input type="hidden" class="check-in-input" value="<?=date('m/d/Y')?>" name="end">
+                <input type="hidden" name="map_lat" value="" id="mapLatV">
+                <input type="hidden" name="map_lgn" value="" id="mapLangV">
+                <input type="hidden" name="_layout" value="map">
+                <input value="{{ isset($_GET['q']) ? $_GET['q'] : '' }}" name="q" type="text"
+                    id="topHeadSearchInput" class="form-control" placeholder="Search for an Office or Business Name">
+                <a href="javascript:;"><i class="fa fa-search"></i></a>
+            </form>
         </div>
         <ul class="menu">
             <li class="has-submenu">
@@ -60,7 +72,7 @@ $countUnread = $checkNotify->where('read_at', null)->count();
                         <a href="{{ \App\Helpers\CodeHelper::withAppUrl('/page/guest') }}">Guests</a>
                     </li>
                     <li>
-                        <a href="{{ \App\Helpers\CodeHelper::withAppUrl('/page/host') }}">Hosts</a>
+                        <a href="{{ \App\Helpers\CodeHelper::withAppUrl('/page/how-it-works-hosts') }}">Hosts</a>
                     </li>
                 </ul>
             </li>
@@ -143,6 +155,10 @@ $countUnread = $checkNotify->where('read_at', null)->count();
                         <i class="fa fa-angle-down"></i>
                     </a>
                     <ul class="dropdown-menu text-left width-auto">
+                        @if (!is_vendor() && !is_admin())
+                            <li class="menu-hr"><a href="{{ route('user.dashboard') }}" class="menu-hr"><i
+                                        class="icon ion-md-analytics"></i> {{ __('Dashboard') }}</a></li>
+                        @endif
                         @if (empty(setting_item('wallet_module_disable')))
                             <li class="credit_amount">
                                 <a href="{{ route('user.wallet') }}"><i class="fa fa-money"></i>

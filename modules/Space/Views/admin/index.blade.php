@@ -1,5 +1,5 @@
 @extends('admin.layouts.app')
-@section('content')
+@section('content') 
     <div class="container-fluid">
         <div class="d-flex justify-content-between mb20">
             <h1 class="title-bar">{{!empty($recovery) ? __('Recovery') : __("All Spaces")}}</h1>
@@ -17,7 +17,6 @@
                         {{csrf_field()}}
                         <select name="action" class="form-control">
                             <option value="">{{__(" Bulk Actions ")}}</option>
-
                             @if(!empty($recovery))
                                 <option value="recovery">{{__(" Recovery ")}}</option>
                                 <option value="permanently_delete">{{__("Permanently delete")}}</option>

@@ -160,7 +160,7 @@
                         engineMap.searchBox($('#customPlaceAddress'),function (dataLatLng) {
                             engineMap.clearMarkers();
                             engineMap.addMarker(dataLatLng, {
-                                icon_options: {}
+                                icon_options: {} 
                             });
                             $("input[name=map_lat]").attr("value", dataLatLng[0]);
                             $("input[name=map_lng]").attr("value", dataLatLng[1]);

@@ -33,21 +33,25 @@
 		// Basic Sample using Bloodhound
 		// constructs the suggestion engine
 
-		var countries = new Bloodhound({
-			datumTokenizer: Bloodhound.tokenizers.whitespace,
-			queryTokenizer: Bloodhound.tokenizers.whitespace,
-			prefetch: 'http://pages.revox.io/json/countries-list.json'
-		});
+		var countries = [];
+		var bestPictures = [];
+		
+		// var countries = new Bloodhound({
+		// 	datumTokenizer: Bloodhound.tokenizers.whitespace,
+		// 	queryTokenizer: Bloodhound.tokenizers.whitespace,
+		// 	prefetch: 'http://pages.revox.io/json/countries-list.json'
+		// });
 
-		var bestPictures = new Bloodhound({
-			datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
-			queryTokenizer: Bloodhound.tokenizers.whitespace,
-			prefetch: 'http://pages.revox.io/json/drop-countries.json',
-			remote: {
-				url: 'http://pages.revox.io/json/drop-countries.json',
-				wildcard: '%QUERY'
-			}
-		});
+		// var bestPictures = new Bloodhound({
+		// 	datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+		// 	queryTokenizer: Bloodhound.tokenizers.whitespace,
+		// 	prefetch: 'http://pages.revox.io/json/drop-countries.json',
+		// 	remote: {
+		// 		url: 'http://pages.revox.io/json/drop-countries.json',
+		// 		wildcard: '%QUERY'
+		// 	}
+		// });
+		
 		// passing in `null` for the `options` arguments will result in the default
 		// options being used
 		$('.sample-typehead').typeahead(null, {

@@ -17,6 +17,7 @@ use DB;
 
 class SpaceController extends Controller
 {
+
     protected $spaceClass;
     protected $locationClass;
     /**
@@ -53,17 +54,17 @@ class SpaceController extends Controller
                     "lng"     => (float)$row->map_lng,
                     "gallery" => $row->getGallery(true),
                     "infobox" => view('Space::frontend.layouts.search.loop-gird', ['row' => $row, 'disable_lazyload' => 1, 'wrap_class' => 'infobox-item'])->render(),
-                    'marker' => get_file_url(setting_item("space_icon_marker_map"), 'full') ?? url('images/icons/png/pin.png'),
+                    'marker' => get_file_url(setting_item("space_icon_marker_map"), 'full') ?? url('images/myoffice-marker-1.png'),
                 ];
+                if ($is_ajax) {
+                    Space::where('id', $row->id)->increment('views');
+                }
             }
         }
         $limit_location = 15;
         if (empty(setting_item("space_location_search_style")) or setting_item("space_location_search_style") == "normal") {
             $limit_location = 1000;
         }
-
-        //dd($markers);
-
         //$markers = [$markers[0]];
 
         $data = [
@@ -100,6 +101,9 @@ class SpaceController extends Controller
         if (empty($row) or !$row->hasPermissionDetailView()) {
             return redirect('/');
         }
+
+        Space::where('id', $row->id)->increment('clicks');
+
         $translation = $row->translateOrOrigin(app()->getLocale());
         $space_related = [];
         $location_id = $row->location_id;
@@ -113,25 +117,25 @@ class SpaceController extends Controller
 
         if ($spaceTerms) {
             foreach ($spaceTerms as $spaceTerm) {
-                if($spaceTerm->term->slug == 'parking'){
+                if ($spaceTerm->term->slug == 'parking') {
                     $parking = $spaceTerm->term;
-                } 
+                }
             }
         }
 
         //dd($parking);  
-        if($category!=null){
-            $row['category_name'] = $category->name;    
-        }else{
+        if ($category != null) {
+            $row['category_name'] = $category->name;
+        } else {
             $row['category_name'] = 'Uncategorized';
         }
 
-        if($parking!=null){
-            $row['parking'] = $parking->name;    
-        }else{
+        if ($parking != null) {
+            $row['parking'] = $parking->name;
+        } else {
             $row['parking'] = '';
         }
-        
+
 
         $review_list = $row->getReviewList();
         $data = [
@@ -154,9 +158,19 @@ class SpaceController extends Controller
     public function addToFavourite(Request $request)
     {
         $favourite = new AddToFavourite();
-        $favourite->user_id = Auth::id();
-        $favourite->object_id = $request->space_id;
-        $favourite->save();
-        return response()->json(['success' => 'Added To Favourites']);
+
+        $is_already_fav = AddToFavourite::where('user_id' , Auth::id())->where('object_id' , $request->space_id)->first();
+
+        if(!$is_already_fav){
+            $favourite->user_id = Auth::id();
+            $favourite->object_id = $request->space_id;
+            $favourite->save();
+            return response()->json(['success' => 'Added To Favourites']);
+        }else{
+            AddToFavourite::where('user_id' , Auth::id())->where('object_id' , $request->space_id)->delete();
+            return response()->json(['success' => 'Un favourite successfully.']);
+        }
     }
+
+
 }

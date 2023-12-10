@@ -61,7 +61,11 @@ class ModuleProvider extends ModuleServiceProvider
                         'title'      => __('Recovery'),
                         'permission' => 'space_view',
                     ],
-
+                    'default-content'=>[
+                        'url'        => 'admin/module/space/default-content',
+                        'title'      => __('Default Content'),
+                        'permission' => 'space_view',
+                    ],
                 ]
             ]
         ];

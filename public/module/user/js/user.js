@@ -13,7 +13,7 @@ jQuery(function ($) {
             });
             formData.append('type', "image");
             $.ajax({
-                url: '/admin/module/media/store',
+                url: bookingCore.url + '/admin/module/media/store',
                 type: 'POST',
                 data: formData,
                 enctype: 'multipart/form-data',
@@ -85,7 +85,7 @@ jQuery(function ($) {
         let config = {
             language: image_editer.language,
             translations: image_editer.translations,
-            reduceBeforeEdit : {
+            reduceBeforeEdit: {
                 mode: 'manual',
                 widthLimit: 2500,
                 heightLimit: 2500
@@ -99,11 +99,11 @@ jQuery(function ($) {
             onBeforeComplete: (props) => {
                 return false;
             },
-            onComplete: function (url){
+            onComplete: function (url) {
                 var canvas = url.canvas.toDataURL('image/jpeg');
 
-                if (edit_type === 'multiple'){
-                    $this.closest('.image-item').find('.image-preview').attr('src',canvas);
+                if (edit_type === 'multiple') {
+                    $this.closest('.image-item').find('.image-preview').attr('src', canvas);
                 } else {
                     p.find('.attach-demo').html('<img src="' + canvas + '" alt="image-responsive" style="max-width: 150px">');
                 }
@@ -112,11 +112,11 @@ jQuery(function ($) {
                     url: bookingCore.url + '/media/edit_image',
                     method: 'POST',
                     dataType: 'JSON',
-                    data:{
+                    data: {
                         image: canvas,
                         image_id: image_id,
                     },
-                    success:function (result) {
+                    success: function (result) {
                         console.log(result);
                     }
                 });
@@ -126,7 +126,7 @@ jQuery(function ($) {
         ImageEditor.open(image_path);
     });
 
-    $(document).on('click','.dungdt-upload-box-normal .btn-field-upload,.dungdt-upload-box-normal .attach-demo',function () {
+    $(document).on('click', '.dungdt-upload-box-normal .btn-field-upload,.dungdt-upload-box-normal .attach-demo', function () {
         let p = $(this).closest('.dungdt-upload-box');
         uploaderModal.show({
             multiple: false,
@@ -135,7 +135,7 @@ jQuery(function ($) {
                 let path = (files[0].edit_path !== undefined) ? files[0].edit_path : files[0].max_large_size;
                 p.addClass('active');
                 p.find('.attach-demo').html('<img src="' + files[0].thumb_size + '"/>');
-                p.attr('data-val',files[0].id);
+                p.attr('data-val', files[0].id);
                 p.find('input').val(files[0].id);
                 p.find('.edit-img').attr('data-file', path);
             },
@@ -145,7 +145,7 @@ jQuery(function ($) {
     $('.dungdt-upload-box-normal .delete').click(function (e) {
         e.preventDefault();
         let p = $(this).closest('.dungdt-upload-box');
-        p.find("input").attr('value','')
+        p.find("input").attr('value', '')
         p.removeClass("active");
     });
     $('.dungdt-upload-multiple').find('.btn-field-upload').click(function () {
@@ -163,7 +163,7 @@ jQuery(function ($) {
                         ids.push(files[i].id);
                         html += '<div class="image-item">' +
                             '<div class="inner">';
-                        html += '<a class="edit-img btn btn-sm btn-primary edit-multiple" data-id="'+files[i].id+'" data-file="'+path+'"><i class="fa fa-edit"></i></a>'
+                        html += '<a class="edit-img btn btn-sm btn-primary edit-multiple" data-id="' + files[i].id + '" data-file="' + path + '"><i class="fa fa-edit"></i></a>'
                         html += '<span class="delete btn btn-sm btn-danger"><i class="fa fa-trash"></i></span><div class="img-preview"><img class="image-responsive image-preview w-100" src="' + files[i].thumb_size + '"/></div>' +
                             '</div>' +
                             '</div>'
@@ -192,59 +192,59 @@ jQuery(function ($) {
 
     $(".bravo_user_profile .bravo-list-item .control-action .btn-danger").click(function () {
         var c = confirm($(this).data('confirm'));
-        if(!c){
+        if (!c) {
             return false;
         }
     });
 
     $(".bravo_user_profile .bravo-list-item .control-action .btn-recovery").click(function () {
         var c = confirm($(this).data('confirm'));
-        if(!c){
+        if (!c) {
             return false;
         }
     });
 
     function makeid(length) {
-        var result           = '';
-        var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        var result = '';
+        var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         var charactersLength = characters.length;
-        for ( var i = 0; i < length; i++ ) {
+        for (var i = 0; i < length; i++) {
             result += characters.charAt(Math.floor(Math.random() * charactersLength));
         }
         return result;
     }
     // Form Configs
     $('.has-ckeditor').each(function () {
-        var els  = $(this);
+        var els = $(this);
 
         var id = $(this).attr('id');
 
-        if(!id){
+        if (!id) {
             id = makeid(10);
-            $(this).attr('id',id);
+            $(this).attr('id', id);
         }
-        var h  = els.data('height');
-        if(!h && typeof h =='undefined') h = 300;
+        var h = els.data('height');
+        if (!h && typeof h == 'undefined') h = 300;
 
         // CKEDITOR.replace( id );
         tinymce.init({
-            selector:'#'+id,
+            selector: '#' + id,
             plugins: 'preview searchreplace autolink code fullscreen image link media codesample table charmap hr toc advlist lists wordcount imagetools textpattern help pagebreak hr',
             toolbar: 'formatselect | bold italic strikethrough forecolor backcolor permanentpen formatpainter | link image media | alignleft aligncenter alignright alignjustify  | numlist bullist outdent indent  | pagebreak codesample code| removeformat',
             image_advtab: true,
             image_caption: true,
             toolbar_drawer: 'sliding',
-            relative_urls : false,
-            height:h,
+            relative_urls: false,
+            height: h,
             file_picker_callback: function (callback, value, meta) {
                 /* Provide file and text for the link dialog */
                 if (meta.filetype === 'file') {
                     uploaderModal.show({
-                        multiple:false,
-                        file_type:'video',
-                        onSelect:function (files) {
-                            if(files.length)
-                                callback(bookingCore.url+'/media/preview/'+files[0].id);
+                        multiple: false,
+                        file_type: 'video',
+                        onSelect: function (files) {
+                            if (files.length)
+                                callback(bookingCore.url + '/media/preview/' + files[0].id);
                         },
                     });
                 }
@@ -252,10 +252,10 @@ jQuery(function ($) {
                 /* Provide image and alt text for the image dialog */
                 if (meta.filetype === 'image') {
                     uploaderModal.show({
-                        multiple:false,
-                        file_type:'image',
-                        onSelect:function (files) {
-                            if(files.length)
+                        multiple: false,
+                        file_type: 'image',
+                        onSelect: function (files) {
+                            if (files.length)
                                 callback(files[0].thumb_size);
                         },
                     });
@@ -264,11 +264,11 @@ jQuery(function ($) {
                 /* Provide alternative source and posted for the media dialog */
                 if (meta.filetype === 'media') {
                     uploaderModal.show({
-                        multiple:false,
-                        file_type:'video',
-                        onSelect:function (files) {
-                            if(files.length)
-                                callback(bookingCore.url+'/media/preview/'+files[0].id);
+                        multiple: false,
+                        file_type: 'video',
+                        onSelect: function (files) {
+                            if (files.length)
+                                callback(bookingCore.url + '/media/preview/' + files[0].id);
                         },
                     });
                 }
@@ -285,7 +285,7 @@ jQuery(function ($) {
     $('.form-add-service .nav-tabs a').click(function () {
         setTimeout(function () {
             window.dispatchEvent(new Event('resize'));
-        },200)
+        }, 200)
     });
 
     $('.btn-upload-private-file').change(function () {
@@ -294,9 +294,9 @@ jQuery(function ($) {
         var lists = p.find('.private-file-lists');
 
         me.isLoading = true;
-        for(var i = 0 ;i < me.get(0).files.length ; i++) {
+        for (var i = 0; i < me.get(0).files.length; i++) {
             var d = new FormData();
-            d.append('file',me.get(0).files[i]);
+            d.append('file', me.get(0).files[i]);
             $.ajax({
                 url: bookingCore.url + '/media/private/store',
                 data: d,
@@ -341,39 +341,39 @@ jQuery(function ($) {
 });
 
 var vendorPayout = {
-    saveAccounts:function (btn) {
+    saveAccounts: function (btn) {
         var parent = $(btn).closest('.bravo-form');
         parent.addClass('loading');
 
         $.ajax({
-            url:bookingCore.url+'/vendor/storePayoutAccounts',
-            method:"post",
-            data:parent.find('input,select,textarea').serialize(),
-            dataType:'json',
-            success:function (json) {
+            url: bookingCore.url + '/vendor/storePayoutAccounts',
+            method: "post",
+            data: parent.find('input,select,textarea').serialize(),
+            dataType: 'json',
+            success: function (json) {
                 parent.removeClass('loading');
-                if(json.message){
+                if (json.message) {
                     bookingCoreApp.showSuccess(json.message);
                 }
-                if(json.status){
+                if (json.status) {
                     window.setTimeout(function () {
                         window.location.reload();
-                    },2000);
+                    }, 2000);
                 }
             },
-            error:function (e) {
+            error: function (e) {
                 console.log(e);
                 parent.removeClass('loading');
                 bookingCoreApp.showAjaxError(e);
             }
         })
     },
-    sendRequest:function (btn) {
+    sendRequest: function (btn) {
         var parent = $(btn).closest('.modal');
         var form = parent.find('form');
         form.removeClass('was-validated');
 
-        if(form[0].checkValidity() === false){
+        if (form[0].checkValidity() === false) {
             form.addClass('was-validated');
             return false;
         }
@@ -381,22 +381,22 @@ var vendorPayout = {
         parent.addClass('loading');
 
         $.ajax({
-            url:bookingCore.url+'/vendor/createPayoutRequest',
-            method:"post",
-            data:form.find('input,select,textarea').serialize(),
-            dataType:'json',
-            success:function (json) {
+            url: bookingCore.url + '/vendor/createPayoutRequest',
+            method: "post",
+            data: form.find('input,select,textarea').serialize(),
+            dataType: 'json',
+            success: function (json) {
                 parent.removeClass('loading');
-                if(json.message){
+                if (json.message) {
                     bookingCoreApp.showSuccess(json.message);
                 }
-                if(json.status){
+                if (json.status) {
                     window.setTimeout(function () {
                         window.location.reload();
-                    },3000);
+                    }, 3000);
                 }
             },
-            error:function (e) {
+            error: function (e) {
                 console.log(e);
                 parent.removeClass('loading');
                 bookingCoreApp.showAjaxError(e);
@@ -406,3 +406,60 @@ var vendorPayout = {
 
 
 };
+
+
+
+//mobileNoFieldData
+$(document).ready(function () {
+    if ($(".mobileNoFieldData").length > 0) {
+
+        for (let mobileElem of document.getElementsByClassName("mobileNoFieldData")) {
+
+            var mobileElemParent = $(mobileElem).closest(".mobileNoFieldDataParent");
+            var realElement = mobileElemParent.find(".real");
+
+            const iti = window.intlTelInput(mobileElem, {
+                nationalMode: false,
+                utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/js/utils.js",
+                // initialCountry: "auto",
+                // geoIpLookup: function (callback) {
+                //     fetch("https://ipapi.co/json")
+                //         .then(function (res) { return res.json(); })
+                //         .then(function (data) { callback(data.country_code); })
+                //         .catch(function () { callback("us"); });
+                // },
+                preferredCountries: ['ca'],
+                autoInsertDialCode: true
+            });
+
+            const handleChange = () => {
+                if (mobileElem.value) {
+                    if (iti.isValidNumber()) {
+                        // toastr.success("Phone no is valid");
+                        window.webAlerts.push({
+                            type: "success",
+                            message: "Phone no is valid"
+                        });
+                        realElement.val(iti.getNumber());
+                    } else {
+                        window.webAlerts.push({
+                            type: "error",
+                            message: "Please enter a valid number."
+                        });
+                        // toastr.error("Please enter a valid number.");
+                    }
+                } else {
+                    // toastr.error("Please enter a valid number");
+                    window.webAlerts.push({
+                        type: "error",
+                        message: "Please enter a valid number"
+                    });
+                }
+            };
+
+
+            mobileElem.addEventListener('focusout', handleChange);
+        }
+
+    }
+});

@@ -35,6 +35,7 @@ class SettingClass extends BaseSettingsClass
                     'space_page_list_seo_share',
 
                     'space_booking_buyer_fees',
+                    'space_booking_seller_fees',
                     'space_vendor_create_service_must_approved_by_admin',
                     'space_allow_vendor_can_change_their_booking_status',
                     'space_allow_vendor_can_change_paid_amount',
@@ -55,6 +56,11 @@ class SettingClass extends BaseSettingsClass
                     'space_map_lat_default',
                     'space_map_lng_default',
                     'space_map_zoom_default',
+
+                    'space_default_faqs',
+                    'space_default_terms',
+                    'space_default_privacy_policy',
+                    'space_default_house_rules'
                 ],
                 'html_keys'=>[
 

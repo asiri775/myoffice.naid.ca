@@ -23,6 +23,14 @@
 		// Date Pickers
 		$('#datepicker-range, #datepicker-component, #datepicker-component2').datepicker();
 
+		$('.date-picker-single-component input').datepicker({
+			
+		});  
+
+		$(document).on("click", ".date-picker-single-component span", function(){
+			$(this).closest(".date-picker-single-component").find("input").focus();  
+		});
+
 		$('#datepicker-embeded').datepicker({
 			daysOfWeekDisabled: "0,1"
 		});
@@ -33,21 +41,26 @@
 		// Basic Sample using Bloodhound
 		// constructs the suggestion engine
 
-		var countries = new Bloodhound({
-			datumTokenizer: Bloodhound.tokenizers.whitespace,
-			queryTokenizer: Bloodhound.tokenizers.whitespace,
-			prefetch: 'http://pages.revox.io/json/countries-list.json'
-		});
+		var countries = [];
+		var bestPictures = [];
 
-		var bestPictures = new Bloodhound({
-			datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
-			queryTokenizer: Bloodhound.tokenizers.whitespace,
-			prefetch: 'http://pages.revox.io/json/drop-countries.json',
-			remote: {
-				url: 'http://pages.revox.io/json/drop-countries.json',
-				wildcard: '%QUERY'
-			}
-		});
+		// var countries = new Bloodhound({
+		// 	datumTokenizer: Bloodhound.tokenizers.whitespace,
+		// 	queryTokenizer: Bloodhound.tokenizers.whitespace,
+		// 	prefetch: 'http://pages.revox.io/json/countries-list.json'
+		// });
+
+		// var bestPictures = new Bloodhound({
+		// 	datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+		// 	queryTokenizer: Bloodhound.tokenizers.whitespace,
+		// 	prefetch: 'http://pages.revox.io/json/drop-countries.json',
+		// 	remote: {
+		// 		url: 'http://pages.revox.io/json/drop-countries.json',
+		// 		wildcard: '%QUERY'
+		// 	}
+		// });
+
+
 		// passing in `null` for the `options` arguments will result in the default
 		// options being used
 		$('.sample-typehead').typeahead(null, {

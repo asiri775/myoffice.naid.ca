@@ -11,7 +11,7 @@
         <div class="layout1 homePage">
             <div class=" container container-fixed-lg">
                 <!-- Tab panes -->
-                <div class="sub-page">
+                <div class="sub-page page-cms-content {{$row->slug}}">
                     <div class="slide-left padding-20 sm-no-padding" id="tab5">
                         <div class="row row-same-height">
                             <div class="col-md-12">

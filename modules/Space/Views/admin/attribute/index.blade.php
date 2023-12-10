@@ -71,7 +71,8 @@
                                                 </a>
                                                 <a href="{{route('space.admin.attribute.term.index',['id'=>$row->id])}}" class="btn btn-sm btn-success"><i class="fa fa"></i> {{__("Manage Terms")}}
                                                 </a>
-
+                                                <a onclick="return confirm('Are you sure you want to delete it?');" href="{{route('space.admin.attribute.delete',['id'=>$row->id])}}" class="btn btn-danger btn-sm"><i class="fa fa-delete"></i> {{__('Delete')}}
+                                                </a>
                                             </td>
                                         </tr>
                                     @endforeach

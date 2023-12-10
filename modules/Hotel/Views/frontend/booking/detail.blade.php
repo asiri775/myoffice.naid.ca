@@ -1,6 +1,6 @@
 @php $lang_local = app()->getLocale() @endphp
 <div class="booking-review">
-	<h4 class="booking-review-title">{{__("Your Booking")}}</h4>
+	<h4 class="booking-review-title">{{__("Booking Details")}}</h4>
 	<div class="booking-review-content">
 		<div class="review-section">
 			<div class="service-info">

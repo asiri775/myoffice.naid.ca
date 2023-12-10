@@ -38,7 +38,7 @@ class LoginController extends Controller
     /**
      * Create a new controller instance.
      *
-     * @return void
+     * @return void  
      */
     public function __construct()
     {
@@ -49,6 +49,8 @@ class LoginController extends Controller
     {
         if (Auth::user()->hasPermissionTo('dashboard_access')) {
             return '/admin';
+        } elseif (Auth::user()->hasPermissionTo('dashboard_vendor_access')) {
+            return '/user/profile';
         } else {
             return $this->redirectTo;
         }
@@ -137,7 +139,6 @@ class LoginController extends Controller
                 Auth::login($realUser);
 
                 return redirect('/');
-
             } else {
 
                 if ($existUser->deleted == 1) {
@@ -159,6 +160,4 @@ class LoginController extends Controller
             return redirect()->route('login')->with('error', $message);
         }
     }
-
-
 }

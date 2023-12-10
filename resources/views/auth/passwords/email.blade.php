@@ -10,19 +10,23 @@
                             {{ session('status') }}
                         </div>
                     @endif
-                    <form class="form bravo-form-register" method="POST" action="{{ route('password.email') }}">
+                    @if ($errors->has('email'))
+                        <div class="alert alert-danger" role="alert">
+                            No Account found associated with this email
+                        </div>
+                    @endif
+                    <form class="form bravo-forms-register themeForm" method="POST" action="{{ route('password.email') }}">
                         @csrf
                         <div class="form-group">
                             <label class="formlabel fontsize13 robotoregular graytext font-weight-bold">Email Address
                                 <span class=" required">*</span></label>
-                                <input  type="email" class="form-control{{ $errors->has('email') ? ' is-invalid' : '' }}" name="email" value="{{ old('email') }}" required>
+                                <input  type="email" class="form-control" name="email" value="{{ old('email') }}" required>
                                 <i class="input-icon field-icon icofont-mail"></i>
                                 <span class="invalid-feedback error error-email"></span>
                         </div>
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary form-submit">
                                 Send Password Reset Link
-                                <span class="spinner-grow spinner-grow-sm icon-loading" role="status" aria-hidden="true"></span>
                             </button>
                         </div>
                     </form>

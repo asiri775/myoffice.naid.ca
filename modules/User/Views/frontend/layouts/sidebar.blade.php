@@ -144,6 +144,7 @@ if (!empty($menus))
             }
         }
     }
+    
 ?>
 <div class="sidebar-user">
     <div class="bravo-close-menu-user"><i class="icofont-scroll-left"></i></div>

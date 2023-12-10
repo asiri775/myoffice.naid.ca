@@ -697,7 +697,7 @@ class General extends Seeder
                 ],
                 [
                     'name' => 'page_contact_sub_title',
-                    'val' => "Send us a message and we'll respond as soon as possible",
+                    'val' => "Complete the contact form below and our team will respond as soon as possible",
                     'group' => "general",
                 ],
                 [
@@ -985,7 +985,7 @@ class General extends Seeder
                 ],
                 [
                     'name'  => 'page_contact_sub_title',
-                    'val'   => "Send us a message and we'll respond as soon as possible",
+                    'val' => "Complete the contact form below and our team will respond as soon as possible",
                     'group' => "general",
                 ],
                 [

@@ -3,6 +3,7 @@ namespace Modules\Space\Models;
 
 use App\BaseModel;
 use Modules\Core\Models\Terms;
+use Modules\Space\Models\Space;
 
 class SpaceTerm extends BaseModel
 {
@@ -14,6 +15,11 @@ class SpaceTerm extends BaseModel
 
     public function term(){
         return $this->belongsTo(Terms::class);
+     }
+
+
+     public function space(){
+        return $this->belongsTo(Space::class , 'target_id');
      }
 
 }

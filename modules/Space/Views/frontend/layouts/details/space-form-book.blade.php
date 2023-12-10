@@ -4,28 +4,26 @@
 $startTime = null;
 $endTime = null;
 
-$showTimingOption = true;
+$showTimingOption = false;
 
 if ($row->available_from == null) {
-    $row->available_from = "00:00";
+    $row->available_from = '00:00';
 }
 
 if ($row->available_to == null) {
-    $row->available_to = "23:59";
+    $row->available_to = '23:59';
 }
 
 if ($row->long_term_rental == 1) {
-
-    $showTimingOption = false;
+    // $showTimingOption = false;
     $startTime = $row->available_from;
     $endTime = $row->available_to;
-
-} else {
-
+}
+//below was before in else condition now move into true so always worked
+if (true) {
     if (isset($_GET['start_hour']) && trim($_GET['start_hour']) != null && trim($_GET['start_hour'])) {
         $startTime = trim($_GET['start_hour']);
     }
-
 
     if (isset($_GET['to_hour']) && trim($_GET['to_hour']) != null && trim($_GET['to_hour'])) {
         $endTime = trim($_GET['to_hour']);
@@ -43,7 +41,7 @@ if ($row->long_term_rental == 1) {
                     if (strlen($startTimeHR) == 1) {
                         $startTimeHR = '0' . $startTimeHR;
                     }
-                    $nextNearestHour = $startTimeHR . ":00";
+                    $nextNearestHour = $startTimeHR . ':00';
                     if ($nextNearestHour < $row->available_to) {
                         $startTime = $nextNearestHour;
                     }
@@ -60,7 +58,7 @@ if ($row->min_hour_stays != null && $startTime != null && $endTime == null) {
     $startTimeHR = trim($startTimeExploded[0]);
     if ($startTimeHR > 0) {
         $startTimeHR = $startTimeHR + $row->min_hour_stays;
-        $endTime = $startTimeHR . ":00";
+        $endTime = $startTimeHR . ':00';
     }
 }
 
@@ -91,7 +89,7 @@ if ($startTime != null && $endTime != null) {
         $diffHour = $endTimeHR - $startTimeHR;
         if ($diffHour < $row->min_hour_stays) {
             $startTimeHR = $startTimeHR + $row->min_hour_stays;
-            $endTime = $startTimeHR . ":00";
+            $endTime = $startTimeHR . ':00';
         }
     }
 }
@@ -126,6 +124,18 @@ if ($endTime != null) {
 }
 
 //$showTimingOption = true;
+$spacePriceData = \App\Helpers\CodeHelper::spacePriceData($row);
+
+if(array_key_exists('hourly', $spacePriceData['prices'])){
+    $showTimingOption = true;
+}else{
+    if($startTime==null){
+        $startTime = "00:00";
+    }
+    if($endTime==null){
+        $endTime = "23:59";
+    }
+}
 
 ?>
 <style>
@@ -214,54 +224,52 @@ if ($endTime != null) {
         opacity: 0.3;
     }
 
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        right: 10px;
+    }
 
+    .detailcalndericon {
+        left: 10px;
+    }
 </style>
 
-@if($row->hourly)
-    <div class="promotion mt-5">
-        <div class="bg-overlay"></div>
-        <div class="pro-card">
-            @if($row->hourly)
-                <div class="left">
-                    <h1>${{$row->hourly}}/Hour</h1>
-                </div>
-            @endif
-            @if($row->discount)
-                <div class="right">
-                    <span class="arrow right">{{$row->discount}}% OFF!</span>
-                </div>
-            @endif
+<div class="promotion mt-5">
+    <div class="bg-overlay"></div>
+    <div class="pro-card">
+        <div class="left">
+            <h1>${{ \App\Helpers\CodeHelper::getNumValueOrDefault($spacePriceData['discountedPrice'], $spacePriceData['price']) }}/{{ \App\Helpers\CodeHelper::shortNameForPriceType($spacePriceData['priceType']) }}
+            </h1>
         </div>
-        <div class="clearfix"></div>
-        <h3>Book Longer and Save More</h3>
-        <div class="row pro-list">
-            @if($row->daily)
-                <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 mb-3">
-                    <div class="pro-div">
-                        <h2>${{$row->daily}}</h2>
-                        <p>Daily</p>
-                    </div>
-                </div>
-            @endif
-            @if($row->weekly)
-                <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 mb-3">
-                    <div class="pro-div">
-                        <h2>${{$row->weekly}}</h2>
-                        <p>Weekly</p>
-                    </div>
-                </div>
-            @endif
-            @if($row->monthly)
-                <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 mb-3">
-                    <div class="pro-div">
-                        <h2>${{$row->monthly}}</h2>
-                        <p>Monthly</p>
-                    </div>
-                </div>
-            @endif
-        </div>
+        @if (\App\Helpers\CodeHelper::checkIfNumValNotNull($spacePriceData['discountRate']))
+            <div class="right">
+                <span class="arrow right">{{ $spacePriceData['discountRate'] }}% OFF!</span>
+            </div>
+        @endif
     </div>
-@endif
+    <div class="clearfix"></div>
+    @if (count($spacePriceData['prices']) >= 2)
+        <h3>Book Longer and Save More</h3>
+    @else
+        <h3>Book Now</h3>
+    @endif
+    <div class="row pro-list">
+        <?php
+                    foreach ($spacePriceData['prices'] as $key => $priceData) {
+                        if($key != $spacePriceData['priceType']){
+                        ?>
+        <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 mb-3">
+            <div class="pro-div">
+                <h2>${{ \App\Helpers\CodeHelper::getNumValueOrDefault($priceData['discountedPrice'], $priceData['price']) }}
+                </h2>
+                <p>{{ $key }}</p>
+            </div>
+        </div>
+        <?php
+                        }
+                    }
+                    ?>
+    </div>
+</div>
 
 <div class="date-select">
     <div class="detailsbooking fulwidthm left mgnB10 pdgB15 dobordergry mt-5 mb-3">
@@ -271,58 +279,56 @@ if ($endTime != null) {
                 <a href="javascript:;" id="openCalendar">Click Here to See Availability Calendar</a>
             </div>
 
-            <div class="detailformrow mgnB15 left fulwidthm @if(!$showTimingOption) non-time @endif">
+            <div class="detailformrow mgnB15 left fulwidthm @if (!$showTimingOption) non-time @endif">
                 <div class="dateInputC">
                     <span class="detailcalndericon"><i class=" fa fa-calendar"></i></span>
                     <input id="dpd1x1" class="start_date fulwidthm text-left whitebg detailsinput" name="start"
-                           placeholder="Check In" type="text" value="{{$startDate}}" readonly>
+                        placeholder="Check In" width="120" type="text" value="{{ $startDate }}" readonly>
                 </div>
-                <div class="timeInputC" style="@if(!$showTimingOption) display:none !important; @endif">
+                <div class="timeInputC" style="@if (!$showTimingOption) display:none !important; @endif">
                     <select class="selectsearch" style="width:100%;" name="start_hour" id="start_hour">
                         <option value="">Time</option>
-                        @foreach($allDayTimeSlots as $slot)
-                            @if( ($slot >= $row->available_from) && ($slot <= $row->available_to) )
-                                <option
-                                    @if($startTime == $slot) selected
-                                    @endif value="{{$slot}}">{{ ($slot) }}</option>
+                        @foreach ($allDayTimeSlots as $slot)
+                            @if ($slot >= $row->available_from && $slot <= $row->available_to)
+                                <option @if ($startTime == $slot) selected @endif value="{{ $slot }}">
+                                    {{ $slot }}</option>
                             @endif
                         @endforeach
                     </select>
                 </div>
-                <div class="whenInputC" style="@if(!$showTimingOption) display:none !important; @endif">
+                <div class="whenInputC" style="@if (!$showTimingOption) display:none !important; @endif">
                     <select class="selectsearch"
-                            style="width:100%; @if(!$showTimingOption) display:none !important; @endif"
-                            name="start_ampm" id="start_ampm">
-                        <option value="AM" {{ ($start_hour_state == "AM") ? "selected" : '' }}>AM</option>
-                        <option value="PM" {{ ($start_hour_state == "PM") ? "selected" : '' }}>PM</option>
+                        style="width:100%; @if (!$showTimingOption) display:none !important; @endif"
+                        name="start_ampm" id="start_ampm">
+                        <option value="AM" {{ $start_hour_state == 'AM' ? 'selected' : '' }}>AM</option>
+                        <option value="PM" {{ $start_hour_state == 'PM' ? 'selected' : '' }}>PM</option>
                     </select>
                 </div>
             </div>
 
-            <div class="detailformrow mgnB15 left fulwidthm  @if(!$showTimingOption) non-time @endif">
+            <div class="detailformrow mgnB15 left fulwidthm  @if (!$showTimingOption) non-time @endif">
                 <div class="dateInputC">
                     <span class="detailcalndericon"><i class=" fa fa-calendar"></i></span>
-                    <input id="dpd2x2" class="end_date fulwidthm  text-left whitebg detailsinput" name="end"
-                           placeholder="Check Out" type="text" value="{{$toDate}}" readonly>
+                    <input id="dpd2x2" width="120" class="end_date fulwidthm  text-left whitebg detailsinput"
+                        name="end" placeholder="Check Out" type="text" value="{{ $toDate }}" readonly>
                 </div>
-                <div class="timeInputC" style="@if(!$showTimingOption) display:none !important; @endif">
+                <div class="timeInputC" style="@if (!$showTimingOption) display:none !important; @endif">
                     <select class="selectsearch" style="width:100%;" name="end_hour" id="end_hour">
                         <option value="">Time</option>
-                        @foreach($allDayTimeSlots as $slot)
-                            @if( ($slot >= $row->available_from) && ($slot <= $row->available_to) )
-                                <option
-                                    @if($endTime == $slot) selected
-                                    @endif value="{{$slot}}">  {{ ($slot) }}</option>
+                        @foreach ($allDayTimeSlots as $slot)
+                            @if ($slot >= $row->available_from && $slot <= $row->available_to)
+                                <option @if ($endTime == $slot) selected @endif value="{{ $slot }}">
+                                    {{ $slot }}</option>
                             @endif
                         @endforeach
                     </select>
                 </div>
-                <div class="whenInputC" style="@if(!$showTimingOption) display:none !important; @endif">
+                <div class="whenInputC" style="@if (!$showTimingOption) display:none !important; @endif">
                     <select class="selectsearch"
-                            style="width:100%; @if(!$showTimingOption) display:none !important; @endif" name="end_ampm"
-                            id="end_ampm">
-                        <option value="AM" {{ ($end_hour_state == "AM") ? "selected" : '' }}>AM</option>
-                        <option value="PM" {{ ($end_hour_state == "PM") ? "selected" : '' }}>PM</option>
+                        style="width:100%; @if (!$showTimingOption) display:none !important; @endif"
+                        name="end_ampm" id="end_ampm">
+                        <option value="AM" {{ $end_hour_state == 'AM' ? 'selected' : '' }}>AM</option>
+                        <option value="PM" {{ $end_hour_state == 'PM' ? 'selected' : '' }}>PM</option>
                     </select>
                 </div>
             </div>
@@ -339,19 +345,18 @@ if ($endTime != null) {
 
 <div class="clearfix"></div>
 <div class="extra-box mt-3 mb-3">
-    @if($booking_data['extra_price'])
-        <div class="form-section-group form-group" v-if="extra_price.length">
+    @if ($booking_data['extra_price'])
+        <div class="form-section-group form-group d-none" v-if="extra_price.length">
             <h4 class="form-section-title">{{ __('Extra prices:') }}</h4>
             <div class="form-section-group form-group">
                 @foreach ($booking_data['extra_price'] as $extra_price)
                     <div class="extra-price-wrap d-flex justify-content-between">
                         <label>
-                            <input type="checkbox" name="extra_price" value="{{ $extra_price['price'] }}" true-value="1"
-                                   false-value="0" v-model="type.enable">
+                            <input type="checkbox" name="extra_price" value="{{ $extra_price['price'] }}"
+                                true-value="1" false-value="0" v-model="type.enable">
                             {{ $extra_price['name'] }}
-                            <i data-toggle="tooltip" data-placement="top" title=""
-                               class="icofont-info-circle"
-                               data-original-title="This helps us run our platform and offer services like 24/7 support on your trip."></i>
+                            <i data-toggle="tooltip" data-placement="top" title="" class="icofont-info-circle"
+                                data-original-title="This helps us run our platform and offer services like 24/7 support on your trip."></i>
                         </label>
                         <div class="flex-shrink-0">{{ $extra_price['price_html'] }}</div>
                     </div>
@@ -359,14 +364,13 @@ if ($endTime != null) {
             </div>
         </div>
     @endif
-    @if($booking_data['buyer_fees'])
-        <div class="form-section-group form-group">
+    @if ($booking_data['buyer_fees'])
+        <div class="form-section-group form-group d-none">
             @foreach ($booking_data['buyer_fees'] as $buyer_fees)
                 <div class="extra-price-wrap d-flex justify-content-between">
                     <label>{{ $buyer_fees['type_name'] }}
-                        <i data-toggle="tooltip" data-placement="top" title=""
-                           class="icofont-info-circle"
-                           data-original-title="This helps us run our platform and offer services like 24/7 support on your trip."></i>
+                        <i data-toggle="tooltip" data-placement="top" title="" class="icofont-info-circle"
+                            data-original-title="This helps us run our platform and offer services like 24/7 support on your trip."></i>
                     </label>
                     <div class="flex-shrink-0">${{ $buyer_fees['price'] }}</div>
                 </div>
@@ -381,8 +385,14 @@ if ($endTime != null) {
                 {{ __('Maximum Capacity: :count Guests', ['count' => $row->max_guests]) }}
             @endif
         </div>
+        <h4 style="display: none;" id="spaceCalPrice">Total: <span style="color: #FFC107;">-</span></h4>
+        <div class="form-group">
+            <input type="text" placeholder="Numer of Guests" id="adultsFieldItem" class="form-control" required
+                name="adults">
+        </div>
         <div class="submit-group">
-            <a href="javascript:;" name="submit" class="btn btn-large" onclick="addToCart();"><span>BOOK NOW</span></a>
+            <a href="javascript:;" name="submit" class="btn btn-large" onclick="addToCart();"><span>BOOK
+                    NOW</span></a>
         </div>
     </div>
 </div>
@@ -425,7 +435,7 @@ if ($endTime != null) {
             initialView: 'dayGridMonth',
             dayMaxEvents: true,
             navLinks: true,
-            eventClick: function (eventInfo) {
+            eventClick: function(eventInfo) {
                 let eventId = eventInfo.event.id;
             }
         });
@@ -433,24 +443,28 @@ if ($endTime != null) {
     }
 
     function showNotification(message, type = "error") {
-        switch (type) {
-            case "error":
-                toastr.error(message);
-                $("#msgx-error").html(message);
-                break;
-            case "success":
-                toastr.success(message);
-                break;
-            default:
-                toastr.info(message);
-                break;
-        }
+        window.webAlerts.push({
+            type: type,
+            message: message
+        });
+        // switch (type) {
+        //     case "error":
+        //         toastr.error(message);
+        //         $("#msgx-error").html(message);
+        //         break;
+        //     case "success":
+        //         toastr.success(message);
+        //         break;
+        //     default:
+        //         toastr.info(message);
+        //         break;
+        // }
     }
 
     let SEARCH_AJAX_REQUEST = null;
 
     function checkTimeAvailability(showAlerts = true) {
-        console.log("checkTimeAvailability called");
+        console.log("checkTimeAvailability called d");
         let checkAvailability = true;
 
         let startDate = $('#dpd1x1').val().toString().trim();
@@ -501,6 +515,8 @@ if ($endTime != null) {
             $('#spaceBookBtn').addClass('disabled');
             $("#start_hour option:selected").val();
 
+            $("#spaceCalPrice").hide();
+
 
             SEARCH_AJAX_REQUEST = $.post("{{ route('space.vendor.availability.verifySelectedTimes') }}", {
                 id: {{ $row->id }},
@@ -510,21 +526,21 @@ if ($endTime != null) {
                 end_hour: endHour,
                 start_ampm: startAmpPm,
                 end_ampm: endAmpPm,
-            }, function (response) {
+            }, function(response) {
                 if (response.status == 'error') {
                     $('#loading-image').hide();
                     if (showAlerts) {
                         showNotification(response.message);
-                        $("#msgx-error").show();
+                        $("#msgx-error").html(response.message).show();
 
                     }
                 } else if (response.status == 'success') {
                     $('#loading-image').hide();
                     if (showAlerts) {
                         showNotification('Space is available', 'success');
-
                     }
                     $('#spaceBookBtn').removeClass('disabled');
+                    $("#spaceCalPrice").show().find("span").html(response.priceFormatted);
                 }
                 if (response.bookings && response.bookings.length > 0) {
                     $('#loading-image').hide();
@@ -543,7 +559,7 @@ if ($endTime != null) {
     function addToCart(showAlerts = true) {
         var extraPrices = [];
 
-        $('input[name=extra_price]:checked').map(function () {
+        $('input[name=extra_price]:checked').map(function() {
             extraPrices.push($(this).val());
         });
 
@@ -558,25 +574,33 @@ if ($endTime != null) {
 
         @if (Auth::check())
         @else
-        let currentUrl = "{{Request::url()}}";
-        let loginRedirectUrl = "{{ route('auth.redirectLogin')}}";
-        let queryData = {
-            start_hour: startHour,
-            to_hour: endHour,
-            start: startDate,
-            end: endDate,
-        };
-        let queryParams = "";
-        for (let queryKey in queryData) {
-            queryParams += queryKey + "=" + queryData[queryKey] + "&";
-        }
-        queryParams = queryParams.slice(0, -1);
-        let currentUrlPath = encodeURIComponent((currentUrl + '?' + queryParams));
-        //console.log(currentUrlPath);
-        loginRedirectUrl = loginRedirectUrl + '?redirect=' + currentUrlPath;
-        //console.log(loginRedirectUrl);
-        window.location.href = loginRedirectUrl;
+            let currentUrl = "{{ Request::url() }}";
+            let loginRedirectUrl = "{{ route('auth.redirectLogin') }}";
+            let queryData = {
+                start_hour: startHour,
+                to_hour: endHour,
+                start: startDate,
+                end: endDate,
+            };
+            let queryParams = "";
+            for (let queryKey in queryData) {
+                queryParams += queryKey + "=" + queryData[queryKey] + "&";
+            }
+            queryParams = queryParams.slice(0, -1);
+            let currentUrlPath = encodeURIComponent((currentUrl + '?' + queryParams));
+            //console.log(currentUrlPath);
+            loginRedirectUrl = loginRedirectUrl + '?redirect=' + currentUrlPath;
+            //console.log(loginRedirectUrl);
+            window.location.href = loginRedirectUrl;
         @endif
+
+        var totalAduts = $("#adultsFieldItem").val().toString().trim();
+        if (totalAduts == '') {
+            showNotification("Enter number of Guests");
+            return false;
+        }
+
+        totalAduts = totalAduts * 1;
 
         $.post("{{ route('booking.addToCart') }}", {
             service_id: {{ $row->id }},
@@ -588,7 +612,8 @@ if ($endTime != null) {
             start_hour: startHour,
             end_hour: endHour,
             extra_price: extraPrices,
-        }, function (response) {
+            adults: totalAduts
+        }, function(response) {
             console.log(response);
             if (response.status == 0) {
                 if (showAlerts) {
@@ -597,7 +622,7 @@ if ($endTime != null) {
             } else if (response.status == 1) {
                 window.location.href = response.url;
             }
-        }).fail(function (response) {
+        }).fail(function(response) {
             response = response.responseJSON;
             showNotification(response.message);
         });
@@ -608,33 +633,33 @@ if ($endTime != null) {
         $('.submit-group a[name="submit"]').attr("id", "spaceBookBtn");
         $('#spaceBookBtn').addClass('disabled');
 
-        $(document).on("click", "#openCalendar", function () {
+        $(document).on("click", "#openCalendar", function() {
             showAvailabilityCalendarModal();
         });
 
         $("#alreadyBookedFor").hide();
 
-        $(document).on("change", 'input[name="start"]', function () {
+        $(document).on("change", 'input[name="start"]', function() {
             checkTimeAvailability();
         });
 
-        $(document).on("change", 'input[name="end"]', function () {
+        $(document).on("change", 'input[name="end"]', function() {
             checkTimeAvailability();
         });
 
-        $(document).on("change", 'select[name="start_hour"]', function () {
+        $(document).on("change", 'select[name="start_hour"]', function() {
             checkTimeAvailability();
         });
 
-        $(document).on("change", 'select[name="end_hour"]', function () {
+        $(document).on("change", 'select[name="end_hour"]', function() {
             checkTimeAvailability();
         });
 
-        $(document).on("change", 'select[name="start_ampm"]', function () {
+        $(document).on("change", 'select[name="start_ampm"]', function() {
             checkTimeAvailability();
         });
 
-        $(document).on("change", 'select[name="end_ampm"]', function () {
+        $(document).on("change", 'select[name="end_ampm"]', function() {
             checkTimeAvailability();
         });
 
@@ -654,7 +679,7 @@ if ($endTime != null) {
 </script>
 
 <script type="text/javascript">
-    $(document).ready(function (e) {
+    $(document).ready(function(e) {
 
         $(".formselect").select2();
 
@@ -674,7 +699,7 @@ if ($endTime != null) {
 
 <script type="text/javascript" src="{{ asset('js/datepikernew.js') }}"></script>
 <script type="text/javascript">
-    $(document).ready(function () {
+    $(document).ready(function() {
         var userloginstat = '0';
 
         if (userloginstat == 0) {
@@ -713,7 +738,7 @@ if ($endTime != null) {
             startDate: '+0d'
         });
 
-        $("#accounmentationGuests").on("keyup", function () {
+        $("#accounmentationGuests").on("keyup", function() {
             getPricingOfListing();
         });
 
@@ -803,17 +828,17 @@ if ($endTime != null) {
         }
 
 
-        $(document).on("change", "#start_time,#start_ampm,#end_time,#end_ampm", function () {
+        $(document).on("change", "#start_time,#start_ampm,#end_time,#end_ampm", function() {
             getPricingOfListing();
         })
 
 
-        $('.input-daterange input').each(function () {
-            $(this).on('changeDate', function () {
+        $('.input-daterange input').each(function() {
+            $(this).on('changeDate', function() {
                 getPricingOfListing();
             });
 
-            $(this).on('clearDate', function () {
+            $(this).on('clearDate', function() {
                 var id = $(this).parent('div').parent('div').attr('id');
                 if (id == "datepicker") {
                     $('#listselprice').hide();
@@ -907,7 +932,3 @@ if ($endTime != null) {
 
     });
 </script>
-
-
-
-

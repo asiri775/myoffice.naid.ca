@@ -1,12 +1,15 @@
 <?php
+
 namespace Plugins\PaymentTwoCheckout\Gateway;
 
+use App\Helpers\Constants;
 use Illuminate\Http\Request;
 use Mockery\Exception;
 use Modules\Booking\Models\Payment;
 use Validator;
 use Illuminate\Support\Facades\Log;
 use Modules\Booking\Models\Booking;
+use Illuminate\Support\Facades\Session;
 
 class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
 {
@@ -58,12 +61,10 @@ class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
         ];
     }
 
-    public function process(Request $request, $booking, $service)
+    public function process(Request $request, $booking, $service, $returnVal = false)
     {
-        if (in_array($booking->status, [
-            $booking::PAID,
-            $booking::COMPLETED,
-            $booking::CANCELLED
+        if (in_array($booking->payment_status, [
+            Constants::PAYMENT_PAID
         ])) {
 
             throw new Exception(__("Booking status does need to be paid"));
@@ -74,10 +75,10 @@ class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
         $payment = new Payment();
         $payment->booking_id = $booking->id;
         $payment->payment_gateway = $this->id;
-        $payment->status = 'draft';
+        $payment->status = Constants::PAYMENT_UNPAID;
         $payment->save();
         $data = $this->handlePurchaseData([], $booking, $request);
-        $booking->status = $booking::UNPAID;
+        // $booking->status = $booking::UNPAID;
         $booking->payment_id = $payment->id;
         $booking->save();
         if ($this->getOption('twocheckout_enable_sandbox')) {
@@ -86,6 +87,11 @@ class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
             $checkout_url_sandbox = 'https://checkout.backpocket.ca/backpocket-payment/live';
         }
         $twoco_args = http_build_query($data, '', '&');
+
+        if($returnVal){
+            return $checkout_url_sandbox . "?" . $twoco_args;
+        }
+
         response()->json([
             'url' => $checkout_url_sandbox . "?" . $twoco_args
         ])->send();
@@ -96,8 +102,8 @@ class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
         $payment->payment_gateway = $this->id;
         // $payment->status = 'draft';
         // $payment->save();
-        
-        $data = $this->handlePurchaseDataNormal($payment,\request());
+
+        $data = $this->handlePurchaseDataNormal($payment, \request());
         if ($this->getOption('twocheckout_enable_sandbox')) {
             $checkout_url_sandbox = 'https://checkout.backpocket.ca/backpocket-payment/sandbox';
         } else {
@@ -105,7 +111,24 @@ class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
         }
         $twoco_args = http_build_query($data, '', '&');
 
-        return [true,'',$checkout_url_sandbox . "?" . $twoco_args];
+        return [true, '', $checkout_url_sandbox . "?" . $twoco_args];
+    }
+
+        public function processNormalCrediBuy($payment)
+    {
+        $payment->payment_gateway = $this->id;
+        // $payment->status = 'draft';
+        // $payment->save();
+
+        $data = $this->handlePurchaseDataNormal($payment, \request());
+        if ($this->getOption('twocheckout_enable_sandbox')) {
+            $checkout_url_sandbox = 'https://checkout.backpocket.ca/backpocket-payment/sandbox-credit';
+        } else {
+            $checkout_url_sandbox = 'https://checkout.backpocket.ca/backpocket-payment/live';
+        }
+        $twoco_args = http_build_query($data, '', '&');
+
+        return [true, '', $checkout_url_sandbox . "?" . $twoco_args];
     }
 
     public function handlePurchaseData($data, $booking, $request)
@@ -116,6 +139,7 @@ class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
         $twocheckout_args['cart_order_id'] = $booking->code;
         $twocheckout_args['merchant_order_id'] = $booking->code;
         $twocheckout_args['total'] = (float)$booking->pay_now;
+        $twocheckout_args['credits'] = $request->input("credits");
         $twocheckout_args['return_url'] = $this->getCancelUrl() . '?c=' . $booking->code;
         $twocheckout_args['x_receipt_link_url'] = $this->getReturnUrl() . '?c=' . $booking->code;
         $twocheckout_args['currency_code'] = setting_item('currency_main');
@@ -131,22 +155,22 @@ class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
         $twocheckout_args['lang'] = app()->getLocale();
         $twocheckout_args['merchantPgIdentifier'] = $request->input("merchantPgIdentifier");
         $twocheckout_args['secret_id'] = $request->input("secret_id");
-        $twocheckout_args['currency'] = $request->input("currency");   
-        $twocheckout_args['amount'] = $request->input("amount");   
-        $twocheckout_args['orderId'] = $request->input("orderId");   
-        $twocheckout_args['invoiceNumber'] = $request->input("invoiceNumber");   
-        $twocheckout_args['successUrl'] = $request->input("successUrl");   
-        $twocheckout_args['errorUrl'] = $request->input("errorUrl");   
-        $twocheckout_args['storeName'] = $request->input("storeName");   
-        $twocheckout_args['transactionType'] = $request->input("transactionType");   
-        $twocheckout_args['timeout'] = $request->input("timeout");   
-        $twocheckout_args['transactionDateTime'] = $request->input("transactionDateTime");   
-        $twocheckout_args['language'] = $request->input("language");   
-        $twocheckout_args['txnToken'] = $request->input("txnToken");   
-        $twocheckout_args['itemList'] = $request->input("itemList");   
-        $twocheckout_args['otherInfo'] = $request->input("otherInfo");  
-        $twocheckout_args['merchantCustomerPhone'] = $request->input("merchantCustomerPhone");   
-        $twocheckout_args['merchantCustomerEmail'] = $request->input("merchantCustomerEmail");   
+        $twocheckout_args['currency'] = $request->input("currency");
+        $twocheckout_args['amount'] = $request->input("amount");
+        $twocheckout_args['orderId'] = $request->input("orderId");
+        $twocheckout_args['invoiceNumber'] = $request->input("invoiceNumber");
+        $twocheckout_args['successUrl'] = $request->input("successUrl");
+        $twocheckout_args['errorUrl'] = $request->input("errorUrl");
+        $twocheckout_args['storeName'] = $request->input("storeName");
+        $twocheckout_args['transactionType'] = $request->input("transactionType");
+        $twocheckout_args['timeout'] = $request->input("timeout");
+        $twocheckout_args['transactionDateTime'] = $request->input("transactionDateTime");
+        $twocheckout_args['language'] = $request->input("language");
+        $twocheckout_args['txnToken'] = $request->input("txnToken");
+        $twocheckout_args['itemList'] = $request->input("itemList");
+        $twocheckout_args['otherInfo'] = $request->input("otherInfo");
+        $twocheckout_args['merchantCustomerPhone'] = $request->input("merchantCustomerPhone");
+        $twocheckout_args['merchantCustomerEmail'] = $request->input("merchantCustomerEmail");
         return $twocheckout_args;
     }
     public function handlePurchaseDataNormal($payment, $request)
@@ -157,28 +181,29 @@ class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
         $twocheckout_args['cart_order_id'] = $payment->code;
         $twocheckout_args['merchant_order_id'] = $payment->code;
         $twocheckout_args['total'] = (float)$payment->amount;
+        $twocheckout_args['credits'] = $request->input("credits");
         $twocheckout_args['return_url'] = $this->getCancelUrl(true) . '?pid=' . $payment->code;
         $twocheckout_args['x_receipt_link_url'] = $this->getReturnUrl(true) . '?pid=' . $payment->code;
         $twocheckout_args['currency_code'] = setting_item('currency_main');
         $twocheckout_args['lang'] = app()->getLocale();
         $twocheckout_args['merchantPgIdentifier'] = $request->input("merchantPgIdentifier");
         $twocheckout_args['secret_id'] = $request->input("secret_id");
-        $twocheckout_args['currency'] = $request->input("currency");   
-        $twocheckout_args['amount'] = $request->input("amount");   
-        $twocheckout_args['orderId'] = $request->input("orderId");   
-        $twocheckout_args['invoiceNumber'] = $request->input("invoiceNumber");   
-        $twocheckout_args['successUrl'] = $request->input("successUrl");   
-        $twocheckout_args['errorUrl'] = $request->input("errorUrl");   
-        $twocheckout_args['storeName'] = $request->input("storeName");   
-        $twocheckout_args['transactionType'] = $request->input("transactionType");   
-        $twocheckout_args['timeout'] = $request->input("timeout");   
-        $twocheckout_args['transactionDateTime'] = $request->input("transactionDateTime");   
-        $twocheckout_args['language'] = $request->input("language");   
-        $twocheckout_args['txnToken'] = $request->input("txnToken");   
-        $twocheckout_args['itemList'] = $request->input("itemList");   
-        $twocheckout_args['otherInfo'] = $request->input("otherInfo");  
-        $twocheckout_args['merchantCustomerPhone'] = $request->input("merchantCustomerPhone");   
-        $twocheckout_args['merchantCustomerEmail'] = $request->input("merchantCustomerEmail"); 
+        $twocheckout_args['currency'] = $request->input("currency");
+        $twocheckout_args['amount'] = $request->input("amount");
+        $twocheckout_args['orderId'] = $request->input("orderId");
+        $twocheckout_args['invoiceNumber'] = $request->input("invoiceNumber");
+        $twocheckout_args['successUrl'] = $request->input("successUrl");
+        $twocheckout_args['errorUrl'] = $request->input("errorUrl");
+        $twocheckout_args['storeName'] = $request->input("storeName");
+        $twocheckout_args['transactionType'] = $request->input("transactionType");
+        $twocheckout_args['timeout'] = $request->input("timeout");
+        $twocheckout_args['transactionDateTime'] = $request->input("transactionDateTime");
+        $twocheckout_args['language'] = $request->input("language");
+        $twocheckout_args['txnToken'] = $request->input("txnToken");
+        $twocheckout_args['itemList'] = $request->input("itemList");
+        $twocheckout_args['otherInfo'] = $request->input("otherInfo");
+        $twocheckout_args['merchantCustomerPhone'] = $request->input("merchantCustomerPhone");
+        $twocheckout_args['merchantCustomerEmail'] = $request->input("merchantCustomerEmail");
         // echo '<pre>'; 
         // print_r( $twocheckout_args);die;
         return $twocheckout_args;
@@ -192,14 +217,19 @@ class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
 
     public function confirmPayment(Request $request)
     {
-        $booking_id=$request->input('invoice_number');
+        $booking_id = $request->input('invoice_number');
         $booking = Booking::where('id', $booking_id)->first();
-        if (!empty($booking) and in_array($booking->status, [$booking::UNPAID])) {
-            $compare_hash1 = $request->input('store_name'). $request->input('currency').$request->input('secret_id')
-            .date("Y-m-d").$request->input('amount').$request->input('invoice_number');
+
+        $platform =  Session::get('platform');
+
+        if (!empty($booking) and in_array($booking->payment_status, [Constants::PAYMENT_UNPAID])) {
+            $compare_hash1 = "name205CAD2001" . date("Y-m-d") . number_format((float)$request->input('amount'), 2, '.', '') . $request->input('invoice_number');
+            $compare_hash1 = hash('sha256', $compare_hash1);
             $compare_hash2 = $request->input("txnToken");
-            if ($compare_hash1 != $compare_hash2) 
-            {
+
+
+            if ($compare_hash1 != $compare_hash2) {
+
                 $payment = $booking->payment;
                 if ($payment) {
                     $payment->status = 'fail';
@@ -211,8 +241,14 @@ class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
                 } catch (\Swift_TransportException $e) {
                     Log::warning($e->getMessage());
                 }
+
+                if($platform == 'mobile'){
+                    return redirect(route('pwa.bookingList'))->with("error", __("Payment Failed"));
+                }
+
                 return redirect($booking->getDetailUrl())->with("error", __("Payment Failed"));
             } else {
+
                 $payment = $booking->payment;
                 if ($payment) {
                     $payment->status = 'completed';
@@ -225,11 +261,20 @@ class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
                 } catch (\Swift_TransportException $e) {
                     Log::warning($e->getMessage());
                 }
+
+                if($platform == 'mobile'){
+                    return redirect(route('pwa.bookingList'))->with("success", __("You payment has been processed successfully"));
+                }
+
                 return redirect($booking->getDetailUrl())->with("success", __("You payment has been processed successfully"));
             }
         }
         if (!empty($booking)) {
-            return redirect($booking->getDetailUrl(false));
+            
+
+            if($platform == 'mobile'){
+                return redirect(route('pwa.bookingList'));
+            }
         } else {
             return redirect(url('/'));
         }
@@ -243,13 +288,13 @@ class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
         $c = $request->query('pid');
 
         $payment = Payment::where('code', $c)->first();
-        
-        if (!empty($payment) and in_array($payment->status,['draft'])) {
-            
-            // $compare_string = $this->getOption('twocheckout_secret_word') . $this->getOption('twocheckout_account_number') . $request->input("order_number") . $request->input("total");
-            // $compare_hash1 = strtoupper(md5($compare_string));
-            // $compare_hash2 = $request->input("key");
+
+        if (!empty($payment) and in_array($payment->status, ['draft'])) {
             if ($request->input("response") == 'success') {
+                $payment->pay_type = $request->input("response");
+                $payment->referance = 1111;
+                $payment->pay_status = 1;
+                $payment->save();
                 return $payment->markAsCompleted();
             } else {
                 return $payment->markAsFailed();
@@ -279,9 +324,7 @@ class TwoCheckoutGateway extends \Modules\Booking\Gateways\BaseGateway
         if (!empty($booking)) {
             return redirect($booking->getDetailUrl());
         } else {
-            return redirect(url('/')); 
+            return redirect(url('/'));
         }
     }
-
-
 }

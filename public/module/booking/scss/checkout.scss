@@ -37,10 +37,10 @@
         margin: 0;
         color: #1A2B48;
         font-size: 24px;
-        font-weight: 500;
-        border-bottom: 2px solid #DAE1E7;
+        font-weight: 700;
         padding-bottom: 20px;
         margin-bottom: 30px;
+        font-family: 'Montserrat' !important;
         @media(max-width: 766px){
             padding-bottom: 10px;
             margin-bottom: 20px;
@@ -83,8 +83,9 @@
     .booking-review-title{
         color: #1A2B48;
         font-size: 24px;
-        font-weight: 500;
+        font-weight: 700;
         margin-bottom: 20px;
+        font-family: 'Montserrat' !important;
         @media(max-width: 766px){
             font-size: 22px;
         }

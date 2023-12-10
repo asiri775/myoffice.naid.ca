@@ -22,3 +22,7 @@ yarn-error.log
 /resources/admin/scss/css
 /storage/installed
 
+
+
+.DS_Store
+/.DS_Store

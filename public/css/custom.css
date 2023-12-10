@@ -482,6 +482,10 @@ div#variable_block {
     color: #FFAD00 !important;
 }
 
+.shere-btn-1:hover a, .shere-btn-2:hover a{
+    color: #FFAD00 !important;
+}   
+
 .shere-btn-2 {
     width: 100%;
     background: #FFAD00;
@@ -1709,6 +1713,33 @@ input[type=checkbox]:checked:before {
 
 .bravo-reviews .review-form .form-wrapper .review-items {
     padding: 25px 15px;
+}
+
+.booking-h-actions ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.booking-h-actions ul li {
+    width: 100%;
+}
+
+.booking-h-actions ul li a {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #333;
+    font-size: 12px;
+}
+
+.booking-h-actions ul li a i{
+    font-size: 24px;
 }
 
 /*Responsive Strucure */

@@ -124,24 +124,7 @@ jQuery(function ($) {
         return html;
     }
 
-    $(".g-map-place").each(function () {
-        var map = $(this).find('.map').attr('id');
-        var searchInput = $(this).find('input[name=map_place]');
-        var latInput = $(this).find('input[name="map_lat"]');
-        var lgnInput = $(this).find('input[name="map_lgn"]');
-        new BravoMapEngine(map, {
-            fitBounds: true,
-            center: [51.505, -0.09],
-            ready: function (engineMap) {
-                engineMap.searchBox(searchInput, function (dataLatLng) {
-                    console.log(dataLatLng);
-                    latInput.attr("value", dataLatLng[0]);
-                    lgnInput.attr("value", dataLatLng[1]);
-                });
-            }
-        });
-
-    });
+    
 
 
     $(".bravo-form-search-slider .effect").each(function () {
@@ -1099,6 +1082,25 @@ jQuery(function ($) {
 
     });
 
+    $(".g-map-place").each(function () {
+        var map = $(this).find('.map').attr('id');
+        var searchInput = $(this).find('input[name=map_place]');
+        var latInput = $(this).find('input[name="map_lat"]');
+        var lgnInput = $(this).find('input[name="map_lgn"]');
+        new BravoMapEngine(map, {
+            fitBounds: true,
+            center: [51.505, -0.09],
+            ready: function (engineMap) {
+                engineMap.searchBox(searchInput, function (dataLatLng) {
+                    console.log(dataLatLng);
+                    latInput.attr("value", dataLatLng[0]);
+                    lgnInput.attr("value", dataLatLng[1]);
+                });
+            }
+        });
+
+    });
+
 });
 
 jQuery(function ($) {
@@ -1179,6 +1181,57 @@ jQuery(function ($) {
         var channelPrivate = pusher.subscribe('user-channel-' + bookingCore.currentUser);
         channelPrivate.bind('App\\Events\\PusherNotificationPrivateEvent', callback);
     }
+
+
+    $('.bravo-contact-host [type=submit]').click(function (e) {
+        e.preventDefault();
+        let form = $(this).closest('.bravo-contact-host');
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': form.find('meta[name="csrf-token"]').attr('content')
+            }
+        });
+        $.ajax({
+            'url': bookingCore.routes.contactHost,
+            'data': {
+                'email': form.find('input[name=email]').val(),
+                'message': form.find('textarea[name=message]').val(),
+                'name': form.find('input[name=name]').val(),
+                'phone': form.find('input[name=phone]').val(),
+                'space': form.find('input[name=space]').val(),
+            },
+            'type': 'POST',
+            beforeSend: function () {
+                form.find('.error').hide();
+                form.find('.icon-loading').css("display", 'inline-block');
+            },
+            success: function (data) {
+                form.find('.icon-loading').hide();
+                console.log(data);
+                if (data.status.toString() === "0") {
+                    if (data.message !== undefined) {
+                        for (var item in data.message) {
+                            var msg = data.message[item];
+                            form.find('.error-' + item).show().text(msg[0]);
+                        }
+                    }
+                    if (data.message_error !== undefined && data.message_error !== "") {
+                        form.find('.message-error').show().html('<div class="alert alert-danger">' + data.message_error + '</div>');
+                    }
+                }else{
+                    $('#contactHost').modal("hide");
+                    window.webAlerts.push({type: 'success', message: data.message});
+                    form[0].reset();
+                }
+            },
+            error: function (e) {
+                form.find('.icon-loading').hide();
+                if (typeof e.responseJSON !== "undefined" && typeof e.responseJSON.message != 'undefined') {
+                    form.find('.message-error').show().html('<div class="alert alert-danger">' + e.responseJSON.message + '</div>');
+                }
+            }
+        });
+    });
 
 
 });

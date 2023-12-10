@@ -216,4 +216,4 @@ $dateDetail = $service->detailBookingEachDate($booking);
             </div>
         </div>
     </div>
-</div>  
+</div>
